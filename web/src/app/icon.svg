@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- fundo rosa antigo -->
+  <rect width="64" height="64" rx="16" fill="#c26a7a"/>
+  <!-- alças -->
+  <path d="M25 11.5 L26.6 20.5 M39 11.5 L37.4 20.5" stroke="#fdf9f3" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+  <!-- corpete -->
+  <path d="M25.8 19.6 Q32 23.6 38.2 19.6 L37.2 32.6 L26.8 32.6 Z" fill="#fdf9f3"/>
+  <!-- saia rodada -->
+  <path d="M26.8 31.6 L37.2 31.6 L48 52 Q32 57.6 16 52 Z" fill="#fdf9f3"/>
+  <!-- florzinha na cintura -->
+  <g transform="translate(32 32.4)">
+    <circle cx="0" cy="-3" r="2.5" fill="#f2b8c2"/>
+    <circle cx="2.85" cy="-0.93" r="2.5" fill="#f2b8c2"/>
+    <circle cx="1.76" cy="2.43" r="2.5" fill="#f2b8c2"/>
+    <circle cx="-1.76" cy="2.43" r="2.5" fill="#f2b8c2"/>
+    <circle cx="-2.85" cy="-0.93" r="2.5" fill="#f2b8c2"/>
+    <circle r="1.7" fill="#f3d98e"/>
+  </g>
+</svg>
