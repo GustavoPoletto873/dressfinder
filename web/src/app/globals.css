@@ -1,0 +1,259 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Paleta: branco creme, rosa antigo, verde sálvia e lavanda           */
+/* ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+  --creme: #fdf9f3;
+  --creme-escuro: #f6efe4;
+  --papel: #fffdf9;
+  --tinta: #3f3533;
+  --suave: #85766f;
+  --linha: #ece2d6;
+  --rosa: #c26a7a;
+  --rosa-forte: #a5505f;
+  --rosa-claro: #f8e4e6;
+  --rosa-bebe: #fbeff0;
+  --salvia: #8fa58a;
+  --salvia-claro: #e8efe4;
+  --lavanda: #b7a3d6;
+  --manteiga: #f3d98e;
+}
+
+@theme inline {
+  --color-creme: var(--creme);
+  --color-creme-escuro: var(--creme-escuro);
+  --color-papel: var(--papel);
+  --color-tinta: var(--tinta);
+  --color-suave: var(--suave);
+  --color-linha: var(--linha);
+  --color-rosa: var(--rosa);
+  --color-rosa-forte: var(--rosa-forte);
+  --color-rosa-claro: var(--rosa-claro);
+  --color-rosa-bebe: var(--rosa-bebe);
+  --color-salvia: var(--salvia);
+  --color-salvia-claro: var(--salvia-claro);
+  --color-lavanda: var(--lavanda);
+  --color-manteiga: var(--manteiga);
+  --font-sans: var(--font-texto), system-ui, sans-serif;
+  --font-titulo: var(--font-titulo), Georgia, serif;
+  --font-cursiva: var(--font-cursiva), cursive;
+  --shadow-suave: 0 1px 2px rgb(120 90 70 / 0.05), 0 8px 24px -8px rgb(120 90 70 / 0.12);
+  --shadow-elevada: 0 2px 4px rgb(120 90 70 / 0.06), 0 18px 40px -12px rgb(160 90 100 / 0.25);
+}
+
+body {
+  background: var(--creme);
+  color: var(--tinta);
+}
+
+::selection {
+  background: var(--rosa-claro);
+}
+
+/* foco visível e consistente para navegação por teclado */
+:focus-visible {
+  outline: 2px solid var(--rosa);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Animações dos ramos de flores                                       */
+/* ------------------------------------------------------------------ */
+
+/* caule "desenhado" (o path usa pathLength="1") */
+.desenhar {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: desenhar 1.6s cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+@keyframes desenhar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* flor abrindo */
+.florescer {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: florescer 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes florescer {
+  from {
+    opacity: 0;
+    transform: scale(0) rotate(-40deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+/* folha brotando a partir da base */
+.brotar {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: brotar 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+@keyframes brotar {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* balanço leve e contínuo do ramo inteiro */
+.balancar {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  animation: balancar 7s ease-in-out 2.6s infinite alternate;
+}
+@keyframes balancar {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(1.6deg);
+  }
+}
+
+/* pétala caindo (tela de carregamento) */
+.petala-caindo {
+  animation: cair 3.8s linear infinite;
+}
+@keyframes cair {
+  0% {
+    opacity: 0;
+    transform: translate(0, -20px) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(40px, 220px) rotate(260deg);
+  }
+}
+
+/* flor girando devagar enquanto carrega */
+.girar-lento {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: girar 6s linear infinite;
+}
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* pulsar suave do miolo */
+.pulsar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulsar 1.6s ease-in-out infinite;
+}
+@keyframes pulsar {
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* entrada suave de conteúdo */
+.surgir {
+  animation: surgir 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* brilho passando nos cards de carregamento */
+.brilho {
+  background: linear-gradient(100deg, var(--creme-escuro) 30%, var(--papel) 50%, var(--creme-escuro) 70%);
+  background-size: 200% 100%;
+  animation: brilho 1.4s ease-in-out infinite;
+}
+@keyframes brilho {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+/* coração "pulando" ao favoritar */
+.coracao-pulo {
+  animation: coracao-pulo 0.45s cubic-bezier(0.34, 1.8, 0.64, 1);
+}
+@keyframes coracao-pulo {
+  40% {
+    transform: scale(1.35);
+  }
+}
+
+/* gaveta de favoritos */
+dialog.gaveta[open] {
+  animation: gaveta-entrar 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+dialog.gaveta::backdrop {
+  background: rgb(63 53 51 / 0.35);
+  backdrop-filter: blur(2px);
+}
+@keyframes gaveta-entrar {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+/* aviso flutuante (toast) */
+.aviso-entrar {
+  animation: aviso-entrar 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+@keyframes aviso-entrar {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* rolagem horizontal sem barra (navegação entre grupos) */
+.sem-barra {
+  scrollbar-width: none;
+}
+.sem-barra::-webkit-scrollbar {
+  display: none;
+}
+
+/* respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .desenhar {
+    stroke-dashoffset: 0;
+  }
+}

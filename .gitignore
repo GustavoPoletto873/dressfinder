@@ -1,0 +1,31 @@
+# Dependências
+node_modules/
+
+# Builds
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Variáveis de ambiente (nunca versionar)
+.env
+.env.*
+!.env.example
+
+# Saída do script de investigação do scraper
+scraper/investigacao/
+
+# Playwright
+test-results/
+playwright-report/
+
+# Vercel
+.vercel/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
