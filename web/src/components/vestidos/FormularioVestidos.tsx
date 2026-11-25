@@ -1,29 +1,35 @@
 "use client";
 
 /**
- * Formulário do modo Vestidos.
- * As peças comuns (cores, tecidos, preço, observações, botões) vêm de ../comum.
+ * Formulário do modo Vestidos, em forma de jornada (uma pergunta por vez).
+ * As peças comuns (cartões, cores, tecidos, preço, observações) vêm de ../comum.
  */
 import { useState } from "react";
 import { OCASIOES_SUGERIDAS, TAMANHOS } from "@/lib/tipos";
 import {
-  BotaoBuscar,
-  BotaoLimpar,
-  CaixaErros,
+  CampoLivre,
   CampoObservacoes,
-  Chip,
+  CartaoOpcao,
   ChipsMultiplos,
   ChipsUnicos,
-  classeCampo,
-  classeCampoPequeno,
   FaixaPreco,
   Grupo,
   itensDaLista,
   juntarCores,
-  Secao,
-  SecaoRecolhivel,
 } from "../comum/campos";
 import { GuiaTecidos } from "../comum/GuiaTecidos";
+import {
+  IconeCapelo,
+  IconeConfete,
+  IconeGuardaSol,
+  IconeLua,
+  IconeMaleta,
+  IconeSol,
+  IconeTaca,
+  IconeVela,
+  IconeXicara,
+} from "../comum/icones";
+import { Jornada, type Passo } from "../comum/Jornada";
 import { SeletorCores } from "../comum/SeletorCores";
 import { TECIDOS_VESTIDOS } from "../comum/tecidos";
 
@@ -77,7 +83,28 @@ export function textoPreco({ precoMin, precoMax }: { precoMin: string; precoMax:
   return "";
 }
 
-const ESTILOS = ["romântico", "elegante", "minimalista", "sexy", "boho", "casual", "vintage", "moderno"];
+const ICONES_OCASIAO: Record<(typeof OCASIOES_SUGERIDAS)[number], typeof IconeSol> = {
+  "casamento de dia": IconeSol,
+  "casamento à noite": IconeLua,
+  formatura: IconeCapelo,
+  trabalho: IconeMaleta,
+  festa: IconeConfete,
+  praia: IconeGuardaSol,
+  jantar: IconeTaca,
+  batizado: IconeVela,
+  "dia a dia": IconeXicara,
+};
+
+const ESTILOS: [string, string][] = [
+  ["romântico", "babados, florais e laços"],
+  ["elegante", "cortes limpos e sofisticados"],
+  ["minimalista", "liso, básico, sem excessos"],
+  ["sexy", "fendas, decotes e justos"],
+  ["boho", "estampas e tecidos fluidos"],
+  ["casual", "soltinho e confortável"],
+  ["vintage", "ar retrô, poá e golinhas"],
+  ["moderno", "recortes e assimetria"],
+];
 const DECOTES = ["decote V", "decote coração", "ombro a ombro", "tomara que caia", "frente única", "gola alta"];
 const MANGAS = ["sem manga", "manga curta", "manga longa", "manga bufante"];
 
@@ -113,129 +140,161 @@ export function FormularioVestidos({ valores, aoMudar, aoEnviar, carregando, err
   const alternar = (campo: keyof ValoresVestidos, valor: string) =>
     definir(campo, valores[campo].toLowerCase() === valor.toLowerCase() ? "" : valor);
 
+  const ocasiaoDaLista = OCASIOES_SUGERIDAS.some((o) => o === valores.ocasiao);
+  const estiloDaLista = ESTILOS.some(([e]) => e === valores.estilo.toLowerCase());
   const qtdDetalhes = [valores.decoteManga, valores.tamanho, valores.precoMin || valores.precoMax, valores.observacoes].filter(Boolean).length;
-  const algoPreenchido = Object.values(valores).some(Boolean);
-  const ocasiaoComErro = erros.some((e) => /ocasi/i.test(e));
 
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        aoEnviar();
-      }}
-      noValidate
-      className="space-y-10"
-    >
-      {/* 1. Ocasião */}
-      <Secao numero={1} titulo="Para qual ocasião?" ajuda="Escolha uma sugestão ou escreva do seu jeito.">
-        <div className="flex flex-wrap gap-2">
-          {OCASIOES_SUGERIDAS.map((o) => (
-            <Chip key={o} ativo={valores.ocasiao === o} onClick={() => definir("ocasiao", o)}>
-              {o}
-            </Chip>
-          ))}
-        </div>
-        <input
-          id="ocasiao"
-          aria-label="Ocasião"
-          aria-invalid={ocasiaoComErro}
-          className={classeCampo + (ocasiaoComErro ? " border-destaque ring-4 ring-destaque/15" : "")}
-          placeholder="Ex.: casamento no campo ao entardecer"
-          value={valores.ocasiao}
-          onChange={(e) => definir("ocasiao", e.target.value)}
-          maxLength={100}
-          autoComplete="off"
-        />
-      </Secao>
-
-      {/* 2. Como você imagina */}
-      <Secao numero={2} titulo="Como você imagina?" ajuda="Tudo opcional. Toque para escolher e toque de novo para desmarcar.">
-        <Grupo rotulo="Comprimento">
-          <div className="grid grid-cols-3 gap-2.5">
-            {(["curto", "midi", "longo"] as const).map((c) => {
-              const ativo = valores.comprimento === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  aria-pressed={ativo}
-                  onClick={() => alternar("comprimento", c)}
-                  className={
-                    "flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-2.5 pt-3 transition-all duration-200 active:scale-95 " +
-                    (ativo
-                      ? "border-destaque bg-primaria-suave text-primaria shadow-cartao"
-                      : "border-borda bg-superficie text-texto-suave hover:-translate-y-0.5 hover:border-destaque/40 hover:text-primaria/80")
-                  }
-                >
-                  <Silhueta comprimento={c} />
-                  <span className={"text-sm capitalize " + (ativo ? "font-semibold" : "text-texto")}>{c}</span>
-                </button>
-              );
-            })}
+  const passos: Passo[] = [
+    {
+      id: "ocasiao",
+      rotulo: "Ocasião",
+      pergunta: "Para qual ocasião é o vestido?",
+      ajuda: "Escolha uma opção ou escreva do seu jeito.",
+      obrigatorio: true,
+      preenchido: valores.ocasiao.trim().length >= 2,
+      avisoObrigatorio: "Conte a ocasião para a gente continuar. Ela é o ponto de partida das sugestões.",
+      conteudo: (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {OCASIOES_SUGERIDAS.map((o) => (
+              <CartaoOpcao key={o} ativo={valores.ocasiao === o} onClick={() => definir("ocasiao", o)} titulo={o} Icone={ICONES_OCASIAO[o]} />
+            ))}
           </div>
-        </Grupo>
-
+          <CampoLivre
+            id="ocasiao"
+            valor={ocasiaoDaLista ? "" : valores.ocasiao}
+            aoMudar={(v) => definir("ocasiao", v)}
+            convite="Não está na lista? Escreva do seu jeito"
+            exemplo="Ex.: casamento no campo ao entardecer"
+            rotulo="Ocasião"
+          />
+        </div>
+      ),
+    },
+    {
+      id: "modelo",
+      rotulo: "Modelo",
+      pergunta: "Como você imagina o vestido?",
+      ajuda: "Comprimento e estilo. Toque de novo para desmarcar.",
+      preenchido: Boolean(valores.comprimento || valores.estilo),
+      conteudo: (
+        <div className="space-y-6">
+          <Grupo rotulo="Comprimento">
+            <div className="grid grid-cols-3 gap-2.5">
+              {(["curto", "midi", "longo"] as const).map((c) => {
+                const ativo = valores.comprimento === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-pressed={ativo}
+                    onClick={() => alternar("comprimento", c)}
+                    className={
+                      "flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-2.5 pt-3 transition-all duration-200 active:scale-95 " +
+                      (ativo
+                        ? "border-primaria bg-primaria-suave text-primaria shadow-cartao"
+                        : "border-borda bg-superficie text-texto-suave hover:-translate-y-0.5 hover:border-destaque/40 hover:text-primaria/80")
+                    }
+                  >
+                    <Silhueta comprimento={c} />
+                    <span className={"text-sm capitalize " + (ativo ? "font-semibold" : "text-texto")}>{c}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </Grupo>
+          <Grupo rotulo="Estilo">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {ESTILOS.map(([e, descricao]) => (
+                <CartaoOpcao key={e} ativo={valores.estilo.toLowerCase() === e} onClick={() => alternar("estilo", e)} titulo={e} descricao={descricao} />
+              ))}
+            </div>
+            <CampoLivre
+              valor={estiloDaLista ? "" : valores.estilo}
+              aoMudar={(v) => definir("estilo", v)}
+              convite="Outro estilo? Descreva do seu jeito"
+              exemplo="Ex.: chique e discreto"
+              rotulo="Outro estilo"
+              maxLength={60}
+            />
+          </Grupo>
+        </div>
+      ),
+    },
+    {
+      id: "cores",
+      rotulo: "Cores",
+      pergunta: "Quais cores combinam com você?",
+      ajuda: "Escolha até 4. Cada uma vira uma opção de busca.",
+      preenchido: Boolean(valores.cor || valores.corOutra),
+      conteudo: (
         <SeletorCores
           key={`cores-${versao}`}
+          semRotulo
           cor={valores.cor}
           corOutra={valores.corOutra}
           aoMudarCor={(cor) => definir("cor", cor)}
           aoMudarCorOutra={(corOutra) => definir("corOutra", corOutra)}
         />
-
-        <Grupo rotulo="Estilo">
-          <ChipsUnicos opcoes={ESTILOS} valor={valores.estilo} aoMudar={(v) => definir("estilo", v)} />
-          <input
-            aria-label="Outro estilo"
-            className={classeCampoPequeno}
-            placeholder="ou descreva o seu estilo…"
-            value={ESTILOS.includes(valores.estilo.toLowerCase()) ? "" : valores.estilo}
-            onChange={(e) => definir("estilo", e.target.value)}
-            maxLength={60}
+      ),
+    },
+    {
+      id: "tecido",
+      rotulo: "Tecido",
+      pergunta: "E o tecido?",
+      ajuda: "Toque em um tecido para ver como ele é ao toque e para que ocasiões combina.",
+      preenchido: Boolean(valores.tecido),
+      conteudo: (
+        <GuiaTecidos key={`tecidos-${versao}`} semRotulo tecidos={TECIDOS_VESTIDOS} valor={valores.tecido} aoMudar={(t) => definir("tecido", t)} />
+      ),
+    },
+    {
+      id: "detalhes",
+      rotulo: "Detalhes",
+      pergunta: "Últimos detalhes",
+      ajuda: qtdDetalhes > 0 ? `${qtdDetalhes} ${qtdDetalhes === 1 ? "detalhe escolhido" : "detalhes escolhidos"}.` : "Decote, manga, tamanho e quanto quer gastar. Tudo opcional.",
+      preenchido: qtdDetalhes > 0,
+      conteudo: (
+        <div className="space-y-7">
+          <Grupo rotulo="Decote">
+            <ChipsMultiplos opcoes={DECOTES} valor={valores.decoteManga} aoMudar={(v) => definir("decoteManga", v)} />
+          </Grupo>
+          <Grupo rotulo="Manga">
+            <ChipsMultiplos opcoes={MANGAS} valor={valores.decoteManga} aoMudar={(v) => definir("decoteManga", v)} />
+          </Grupo>
+          <Grupo rotulo="Tamanho">
+            <ChipsUnicos opcoes={TAMANHOS} valor={valores.tamanho} aoMudar={(v) => definir("tamanho", v)} />
+          </Grupo>
+          <FaixaPreco
+            precoMin={valores.precoMin}
+            precoMax={valores.precoMax}
+            aoMudar={(precoMin, precoMax) => aoMudar({ ...valores, precoMin, precoMax })}
           />
-        </Grupo>
+          <CampoObservacoes
+            id="observacoes"
+            valor={valores.observacoes}
+            aoMudar={(v) => definir("observacoes", v)}
+            exemplo="Ex.: quero algo que disfarce a barriga e dê para usar sutiã"
+          />
+        </div>
+      ),
+    },
+  ];
 
-        <GuiaTecidos key={`tecidos-${versao}`} tecidos={TECIDOS_VESTIDOS} valor={valores.tecido} aoMudar={(t) => definir("tecido", t)} />
-      </Secao>
-
-      {/* 3. Detalhes finais (abre sob demanda) */}
-      <SecaoRecolhivel numero={3} titulo="Detalhes finais" descricaoVazia="Decote, manga, tamanho, preço e observações" quantidade={qtdDetalhes}>
-        <Grupo rotulo="Decote">
-          <ChipsMultiplos opcoes={DECOTES} valor={valores.decoteManga} aoMudar={(v) => definir("decoteManga", v)} />
-        </Grupo>
-        <Grupo rotulo="Manga">
-          <ChipsMultiplos opcoes={MANGAS} valor={valores.decoteManga} aoMudar={(v) => definir("decoteManga", v)} />
-        </Grupo>
-
-        <Grupo rotulo="Tamanho">
-          <ChipsUnicos opcoes={TAMANHOS} valor={valores.tamanho} aoMudar={(v) => definir("tamanho", v)} />
-        </Grupo>
-
-        <FaixaPreco
-          precoMin={valores.precoMin}
-          precoMax={valores.precoMax}
-          aoMudar={(precoMin, precoMax) => aoMudar({ ...valores, precoMin, precoMax })}
-        />
-
-        <CampoObservacoes
-          id="observacoes"
-          valor={valores.observacoes}
-          aoMudar={(v) => definir("observacoes", v)}
-          exemplo="Ex.: quero algo que disfarce a barriga e dê para usar sutiã"
-        />
-      </SecaoRecolhivel>
-
-      <CaixaErros erros={erros} />
-
-      <BotaoBuscar carregando={carregando} texto="Encontrar meu vestido" textoCarregando="Procurando seu vestido…" />
-      {algoPreenchido && !carregando && (
-        <BotaoLimpar
-          onClick={() => {
-            setVersao((v) => v + 1);
-            aoMudar(VALORES_INICIAIS_VESTIDOS);
-          }}
-        />
-      )}
-    </form>
+  return (
+    <Jornada
+      key={`jornada-${versao}`}
+      passos={passos}
+      aoEnviar={aoEnviar}
+      carregando={carregando}
+      erros={erros}
+      textoFinal="Encontrar meu vestido"
+      textoCarregando="Procurando seu vestido…"
+      algoPreenchido={Object.values(valores).some(Boolean)}
+      aoLimpar={() => {
+        setVersao((v) => v + 1);
+        aoMudar(VALORES_INICIAIS_VESTIDOS);
+      }}
+    />
   );
 }

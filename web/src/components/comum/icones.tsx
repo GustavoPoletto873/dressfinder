@@ -14,6 +14,102 @@ const base = (props: P) => ({
   ...props,
 });
 
+// --- ícones de ocasiões e usos ---------------------------------------------
+
+export const IconeSol = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+  </svg>
+);
+
+export const IconeLua = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10z" />
+    <path d="M17 4.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" />
+  </svg>
+);
+
+export const IconeCapelo = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2.5 9 12 4.5 21.5 9 12 13.5z" />
+    <path d="M6.5 11v4.5c1.5 1.5 3.4 2.2 5.5 2.2s4-.7 5.5-2.2V11M21.5 9v5" />
+  </svg>
+);
+
+export const IconeMaleta = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="7.5" width="18" height="12" rx="2" />
+    <path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3 12.5h18" />
+  </svg>
+);
+
+export const IconeConfete = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 20 8.5 8.5l7 7z" />
+    <path d="M13 4.5c.5 1.5 0 2.5-1 3.5M18.5 9c-1.5-.3-2.6.2-3.5 1.2M17 3.5v1.5M20.5 6H19M21 12.5h-1.5" />
+  </svg>
+);
+
+export const IconeGuardaSol = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3.5 11a8.5 8.5 0 0 1 17 0z" />
+    <path d="M12 11v8.5M8 21h8" />
+  </svg>
+);
+
+export const IconeTaca = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M7.5 3.5h9l-.5 5a4 4 0 0 1-8 0z" />
+    <path d="M12 12.5v7M8.5 20.5h7M8 7.5h8" />
+  </svg>
+);
+
+export const IconeVela = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="9" y="10" width="6" height="10.5" rx="1" />
+    <path d="M12 7.5c-1.3-1-1.3-2.6 0-4 1.3 1.4 1.3 3 0 4zM12 7.5V10" />
+  </svg>
+);
+
+export const IconeXicara = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4.5 9.5h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z" />
+    <path d="M15.5 11h1.5a2.5 2.5 0 0 1 0 5h-1.7M8 3.5c-.5.8.5 1.5 0 2.5M11.5 3.5c-.5.8.5 1.5 0 2.5" />
+  </svg>
+);
+
+export const IconeHaltere = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M7 8v8M17 8v8M4 10v4M20 10v4M7 12h10" />
+  </svg>
+);
+
+export const IconeMala = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="6" y="7" width="12" height="13" rx="2" />
+    <path d="M9.5 7V4.5h5V7M10 11v5M14 11v5M8.5 20v1M15.5 20v1" />
+  </svg>
+);
+
+export const IconeFloco = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5" />
+  </svg>
+);
+
+export const IconeVoltar = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M15 5l-7 7 7 7" />
+  </svg>
+);
+
+export const IconeAvancar = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+
 export const IconeCoracao = ({ cheio = false, ...p }: P & { cheio?: boolean }) => (
   <svg {...base(p)} fill={cheio ? "currentColor" : "none"}>
     <path d="M12 20s-7.5-4.6-9.2-9.3C1.6 7.2 3.8 4 7.1 4c2 0 3.5 1.1 4.9 2.9C13.4 5.1 14.9 4 16.9 4c3.3 0 5.5 3.2 4.3 6.7C19.5 15.4 12 20 12 20z" />

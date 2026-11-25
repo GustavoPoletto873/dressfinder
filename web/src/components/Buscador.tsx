@@ -50,7 +50,7 @@ function respostaLocal(entrada: Entrada): RespostaBusca {
 
 /** Classes do cartão do formulário (iguais nos dois modos). */
 const CLASSE_CARTAO =
-  "mx-auto max-w-2xl scroll-mt-6 rounded-[2.25rem] border border-borda bg-superficie/85 p-6 shadow-suave backdrop-blur-sm sm:p-10";
+  "mx-auto max-w-3xl scroll-mt-6 rounded-[2.25rem] border border-borda bg-superficie/85 p-5 shadow-suave backdrop-blur-sm sm:p-10";
 
 export function Buscador() {
   const modo = useModo();
@@ -90,13 +90,9 @@ export function Buscador() {
     const envio = modoDaBusca === "roupas" ? paraEnvioRoupas(roupas) : paraEnvioVestidos(vestidos);
     const validacao = esquemaEntrada.safeParse(envio);
     if (!validacao.success) {
+      // as etapas obrigatórias já são conferidas pela jornada; aqui sobram erros como a faixa de preço
       definirErros(modoDaBusca, [...new Set(validacao.error.issues.map((i) => i.message))]);
-      // leva a pessoa direto ao primeiro campo que falta
-      const caminhos = validacao.error.issues.map((i) => i.path[0]);
-      const alvo = caminhos.includes("ocasiao") ? "ocasiao" : caminhos.includes("tipoPeca") ? "tipo-peca" : caminhos.includes("tipoOutro") ? "tipo-outro" : null;
-      const campo = alvo ? document.getElementById(alvo) : null;
-      campo?.scrollIntoView({ behavior: "smooth", block: "center" });
-      campo?.focus({ preventScroll: true });
+      rolarPara(cartaoDo(modoDaBusca));
       return;
     }
     definirErros(modoDaBusca, []);

@@ -5,7 +5,7 @@
  * uma cor digitada livremente. Usado pelos dois modos.
  */
 import { useState, type CSSProperties } from "react";
-import { alternarNaLista, classeCampoPequeno, contemNaLista, Grupo, itensDaLista } from "./campos";
+import { alternarNaLista, CampoLivre, contemNaLista, Grupo, itensDaLista } from "./campos";
 import { IconeCheck, IconeFechar } from "./icones";
 import { CORES_CLARAS, GRUPOS_CORES, MAX_CORES, TODAS_AS_CORES } from "./paletaCores";
 
@@ -63,7 +63,10 @@ export function SeletorCores({
   corOutra,
   aoMudarCor,
   aoMudarCorOutra,
+  semRotulo = false,
 }: {
+  /** Quando a pergunta já está no título da etapa, esconde o rótulo e a ajuda. */
+  semRotulo?: boolean;
   /** Cores da paleta escolhidas, separadas por vírgula. */
   cor: string;
   /** Cor ou estampa digitada livremente. */
@@ -84,11 +87,13 @@ export function SeletorCores({
   };
   const fundoDaCor = (nome: string) => TODAS_AS_CORES.find((c) => c.nome === nome)?.fundo ?? "#eee";
 
-  return (
-    <Grupo rotulo="Cores e estampas">
-      <p className="-mt-1 text-sm text-texto-suave">
-        Escolha até {MAX_CORES}. Buscamos cada uma como opção.
-      </p>
+  const conteudo = (
+    <>
+      {!semRotulo && (
+        <p className="-mt-1 text-sm text-texto-suave">
+          Escolha até {MAX_CORES}. Buscamos cada uma como opção.
+        </p>
+      )}
 
       {/* escolhidas, com atalho para tirar */}
       {coresEscolhidas.length > 0 && (
@@ -141,14 +146,15 @@ export function SeletorCores({
         </p>
       )}
 
-      <input
-        aria-label="Outra cor ou estampa"
-        className={classeCampoPequeno}
-        placeholder="ou escreva outra cor ou estampa…"
-        value={corOutra}
-        onChange={(e) => aoMudarCorOutra(e.target.value)}
+      <CampoLivre
+        valor={corOutra}
+        aoMudar={aoMudarCorOutra}
+        convite="Outra cor ou estampa? Escreva aqui"
+        exemplo="Ex.: verde água, tie-dye"
+        rotulo="Outra cor ou estampa"
         maxLength={60}
       />
-    </Grupo>
+    </>
   );
+  return semRotulo ? <div className="space-y-2.5">{conteudo}</div> : <Grupo rotulo="Cores e estampas">{conteudo}</Grupo>;
 }

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Peças de formulário compartilhadas pelos dois modos: chips, seções,
- * grupos, faixa de preço, observações, seção recolhível, erros e botões.
+ * Peças de formulário compartilhadas pelos dois modos: chips, cartões de opção,
+ * campo livre, grupos, faixa de preço, observações, erros e botão de limpar.
  * A aparência vem das classes do tema (bg-primaria, border-borda...).
  */
-import { useId, useState, type CSSProperties, type ReactNode } from "react";
-import { IconeFlor, IconeSeta } from "./icones";
+import { useRef, useState, type CSSProperties, type ComponentType, type ReactNode, type SVGProps } from "react";
+import { IconeCheck, IconeLapis } from "./icones";
 
 // ---------------------------------------------------------------------------
 // Utilitários de listas separadas por vírgula ("decote V, manga curta")
@@ -81,6 +81,119 @@ export function Chip({
   );
 }
 
+/** Cartão de opção: ícone, título e uma descrição curta. Bem maior que um chip, para tocar fácil. */
+export function CartaoOpcao({
+  ativo,
+  onClick,
+  titulo,
+  descricao,
+  Icone,
+}: {
+  ativo: boolean;
+  onClick: () => void;
+  titulo: string;
+  descricao?: string;
+  Icone?: ComponentType<SVGProps<SVGSVGElement>>;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={
+        "group relative flex min-h-[4.5rem] items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-200 active:scale-[0.97] " +
+        (ativo
+          ? "border-primaria bg-primaria-suave shadow-cartao"
+          : "border-borda bg-superficie hover:-translate-y-0.5 hover:border-destaque/50 hover:shadow-suave")
+      }
+    >
+      {Icone && (
+        <span
+          className={
+            "grid size-10 shrink-0 place-items-center rounded-full transition-colors " +
+            (ativo ? "bg-primaria text-white" : "bg-primaria-suave text-primaria group-hover:bg-realce")
+          }
+        >
+          <Icone className="size-5" />
+        </span>
+      )}
+      <span className={"min-w-0 flex-1 " + (ativo && !Icone ? "pr-5" : "")}>
+        <span className={"block text-sm leading-tight first-letter:uppercase " + (ativo ? "font-semibold text-primaria-forte" : "font-medium text-texto")}>
+          {titulo}
+        </span>
+        {descricao && <span className="mt-0.5 block text-xs leading-snug text-texto-suave">{descricao}</span>}
+      </span>
+      {/* sem ícone, a marca de escolhido fica no canto (com espaço reservado no texto) */}
+      {ativo && !Icone && (
+        <span className="absolute right-2 top-2 grid size-5 place-items-center rounded-full bg-primaria text-white">
+          <IconeCheck className="size-3.5" strokeWidth={2.6} />
+        </span>
+      )}
+    </button>
+  );
+}
+
+/**
+ * Campo de texto livre "escondido" atrás de um link, para a tela não parecer
+ * um formulário. Abre sozinho quando já há um valor digitado.
+ */
+export function CampoLivre({
+  id,
+  valor,
+  aoMudar,
+  convite,
+  exemplo,
+  rotulo,
+  maxLength = 100,
+  invalido = false,
+  abertoInicial = false,
+}: {
+  id?: string;
+  /** Valor digitado (vazio quando a escolha veio de um cartão). */
+  valor: string;
+  aoMudar: (v: string) => void;
+  convite: string;
+  exemplo: string;
+  rotulo: string;
+  maxLength?: number;
+  invalido?: boolean;
+  /** Já começa aberto e com o cursor (ex.: ao escolher "outra peça"). */
+  abertoInicial?: boolean;
+}) {
+  const [aberto, setAberto] = useState(abertoInicial);
+  const campo = useRef<HTMLInputElement>(null);
+  if (!aberto && !valor) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setAberto(true);
+          requestAnimationFrame(() => campo.current?.focus());
+        }}
+        className="inline-flex items-center gap-1.5 rounded-full px-1 py-1 text-sm text-primaria-forte underline-offset-4 transition hover:underline"
+      >
+        <IconeLapis className="size-4" /> {convite}
+      </button>
+    );
+  }
+  return (
+    <input
+      id={id}
+      ref={campo}
+      aria-label={rotulo}
+      aria-invalid={invalido}
+      className={"surgir " + classeCampo + (invalido ? " border-destaque ring-4 ring-destaque/15" : "")}
+      placeholder={exemplo}
+      value={valor}
+      onChange={(e) => aoMudar(e.target.value)}
+      onBlur={() => !valor && setAberto(false)}
+      autoFocus={abertoInicial}
+      maxLength={maxLength}
+      autoComplete="off"
+    />
+  );
+}
+
 /** Linha de chips de escolha única (toque de novo desmarca). */
 export function ChipsUnicos({ opcoes, valor, aoMudar }: { opcoes: readonly string[]; valor: string; aoMudar: (v: string) => void }) {
   return (
@@ -107,23 +220,6 @@ export function ChipsMultiplos({ opcoes, valor, aoMudar }: { opcoes: readonly st
   );
 }
 
-export function Secao({ numero, titulo, ajuda, children }: { numero: number; titulo: string; ajuda?: string; children: ReactNode }) {
-  return (
-    <section className="space-y-4">
-      <header className="flex items-baseline gap-3">
-        <span className="font-cursiva text-3xl leading-none text-primaria" aria-hidden>
-          {numero}
-        </span>
-        <div>
-          <h2 className="font-titulo text-2xl font-semibold leading-tight">{titulo}</h2>
-          {ajuda && <p className="text-sm text-texto-suave">{ajuda}</p>}
-        </div>
-      </header>
-      {children}
-    </section>
-  );
-}
-
 export function Grupo({ rotulo, children, htmlFor }: { rotulo: string; children: ReactNode; htmlFor?: string }) {
   return (
     <div className="space-y-2.5">
@@ -132,58 +228,6 @@ export function Grupo({ rotulo, children, htmlFor }: { rotulo: string; children:
       </label>
       {children}
     </div>
-  );
-}
-
-/** Seção numerada que abre e fecha (usada em "Detalhes finais"). */
-export function SecaoRecolhivel({
-  numero,
-  titulo,
-  descricaoVazia,
-  quantidade,
-  children,
-}: {
-  numero: number;
-  titulo: string;
-  /** Texto mostrado quando nada foi escolhido ainda. */
-  descricaoVazia: string;
-  quantidade: number;
-  children: ReactNode;
-}) {
-  const [aberta, setAberta] = useState(false);
-  const id = useId();
-  return (
-    <section className="rounded-3xl border border-borda bg-fundo/60">
-      <button
-        type="button"
-        aria-expanded={aberta}
-        aria-controls={id}
-        onClick={() => setAberta((v) => !v)}
-        className="flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left transition hover:bg-primaria-suave/60"
-      >
-        <span className="font-cursiva text-3xl leading-none text-primaria" aria-hidden>
-          {numero}
-        </span>
-        <span className="flex-1">
-          <span className="block font-titulo text-2xl font-semibold leading-tight">{titulo}</span>
-          <span className="block text-sm text-texto-suave">
-            {quantidade > 0
-              ? `${quantidade} ${quantidade === 1 ? "detalhe escolhido" : "detalhes escolhidos"}`
-              : descricaoVazia}
-          </span>
-        </span>
-        <IconeSeta className={"size-5 text-texto-suave transition-transform duration-300 " + (aberta ? "rotate-180" : "")} />
-      </button>
-
-      <div
-        id={id}
-        className={"grid transition-[grid-template-rows] duration-300 ease-out " + (aberta ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
-      >
-        <div className="overflow-hidden" inert={!aberta}>
-          <div className="space-y-7 px-5 pb-6 pt-2">{children}</div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -278,22 +322,6 @@ export function CaixaErros({ erros }: { erros: string[] }) {
       {erros.map((e) => (
         <p key={e}>{e}</p>
       ))}
-    </div>
-  );
-}
-
-/** Botão principal; fica "grudado" no rodapé da tela no celular enquanto a pessoa preenche. */
-export function BotaoBuscar({ carregando, texto, textoCarregando }: { carregando: boolean; texto: string; textoCarregando: string }) {
-  return (
-    <div className="sticky bottom-3 z-10 -mx-1 lg:static">
-      <button
-        type="submit"
-        disabled={carregando}
-        className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-full bg-primaria px-6 py-4 text-base font-semibold tracking-wide text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-primaria-forte active:translate-y-0 active:scale-[0.98] disabled:cursor-wait disabled:opacity-85"
-      >
-        <IconeFlor className={"size-5 text-white/90 transition-transform duration-500 " + (carregando ? "girar-lento" : "group-hover:rotate-[72deg]")} />
-        {carregando ? textoCarregando : texto}
-      </button>
     </div>
   );
 }

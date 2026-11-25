@@ -2,13 +2,14 @@
  * Ramos de flores decorativos que "crescem" ao abrir a página.
  * Puramente visuais: escondidos de leitores de tela e sem capturar cliques.
  */
+import type { CSSProperties } from "react";
 import { Botao, Caule, CORES, Em, Florzinha, Folha, Frutinhas, Lavanda, Margarida, Rosa, Tulipa } from "./flores";
 
 /** Ramo que nasce no canto superior esquerdo (0,0) e se espalha para dentro. */
-export function RamoCanto({ className = "", atrasoBase = 0 }: { className?: string; atrasoBase?: number }) {
+export function RamoCanto({ className = "", atrasoBase = 0, style }: { className?: string; atrasoBase?: number; style?: CSSProperties }) {
   const a = (s: number) => atrasoBase + s;
   return (
-    <svg viewBox="0 0 340 300" className={className} aria-hidden focusable="false">
+    <svg viewBox="0 0 340 300" className={className} style={style} aria-hidden focusable="false">
       <g className="balancar">
         {/* caules principais */}
         <Caule d="M -4 -4 C 40 40, 80 110, 165 160" atrasoS={a(0)} largura={2.6} />
