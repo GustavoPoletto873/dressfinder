@@ -26,7 +26,7 @@ const fonteCursiva = Great_Vibes({
 
 export const metadata: Metadata = {
   title: "Achei o Vestido",
-  description: "Conte a ocasião e como você imagina o vestido. A gente encontra opções da Shein Brasil que combinam com você.",
+  description: "Conte a ocasião e como você imagina o vestido. A gente encontra opções na Shein, Renner, C&A e outras lojas que você escolher.",
 };
 
 export const viewport: Viewport = {

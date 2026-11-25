@@ -3,14 +3,14 @@
  *
  * 1. Valida a entrada (zod): um formulário por modo ("vestidos" ou "roupas").
  * 2. Gera 5 a 8 buscas (Claude com o prompt do modo; se falhar, regras do modo).
- * 3. Monta os links de busca da Shein e do Google (sempre disponíveis).
- * 4. Consulta o scraper em paralelo, com timeout total de 25 s.
- * 5. Para as buscas que ficaram sem produtos, consulta o Google via SerpAPI.
+ * 3. Monta os links de busca de cada loja escolhida e do Google (sempre disponíveis).
+ * 4. Se a Shein estiver entre as lojas, consulta o scraper em paralelo, com timeout total de 25 s.
+ * 5. Consulta o Google Imagens via SerpAPI (1 busca por termo cobre todas as lojas escolhidas).
  * 6. Filtra pela faixa de preço e devolve tudo.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { limiteExcedido } from "@/lib/limiteTaxa";
-import { linkBuscaGoogle, linkBuscaShein } from "@/lib/links";
+import { linkDaLoja, linkGoogle, lojaPorId } from "@/lib/lojas";
 import { buscarNoScraper } from "@/lib/scraper";
 import { buscarAnunciosNoGoogle, maxTermosSerpApi, serpApiConfigurada } from "@/lib/serpapi";
 import { gerarBuscas } from "@/lib/termosIA";
@@ -36,6 +36,14 @@ function dentroDaFaixa<T extends { precoNumero: number | null }>(itens: T[], ent
     if (precoMax !== undefined && item.precoNumero > precoMax) return false;
     return true;
   });
+}
+
+/** No modo Roupas, o público escolhido filtra o que não é para ele (ex.: peças masculinas para quem pediu feminino). */
+function filtroDePublico(entrada: Entrada): RegExp | undefined {
+  if (entrada.modo !== "roupas") return undefined;
+  if (entrada.publico === "feminino" || entrada.publico === "plus size") return /masculin/i;
+  if (entrada.publico === "masculino") return /feminin/i;
+  return undefined;
 }
 
 function ipDaRequisicao(req: NextRequest): string {
@@ -64,10 +72,14 @@ export async function POST(req: NextRequest) {
   // 2. buscas sugeridas
   const { buscas, origem } = await gerarBuscas(entrada);
 
-  // 3 e 4. scraper em paralelo, com um único prazo para todas as buscas
+  // 3 e 4. scraper (só existe para a Shein) em paralelo, com um único prazo para todas as buscas
+  const { lojas } = entrada;
+  const comShein = lojas.includes("shein");
   const controle = new AbortController();
   const temporizador = setTimeout(() => controle.abort(), TIMEOUT_SCRAPER_MS);
-  const doScraper = await Promise.allSettled(buscas.map((b) => buscarNoScraper(b.termo, controle.signal)));
+  const doScraper = await Promise.allSettled(
+    buscas.map((b) => (comShein ? buscarNoScraper(b.termo, controle.signal) : Promise.resolve({ status: "desativado" as const, produtos: [] as Produto[] }))),
+  );
   clearTimeout(temporizador);
 
   const resultados: ResultadoBusca[] = buscas.map((busca, i) => {
@@ -75,8 +87,11 @@ export async function POST(req: NextRequest) {
     const scraper = r?.status === "fulfilled" ? r.value : { status: "erro" as const, produtos: [] as Produto[] };
     return {
       ...busca,
-      linkShein: linkBuscaShein(busca.termo),
-      linkGoogle: linkBuscaGoogle(busca.termo),
+      links: lojas.map((id) => {
+        const loja = lojaPorId(id)!;
+        return { loja: id, nome: loja.nome, ...linkDaLoja(loja, busca.termo) };
+      }),
+      linkGoogle: linkGoogle(lojas, busca.termo),
       status: scraper.status,
       produtos: dentroDaFaixa(scraper.produtos, entrada),
       statusAnuncios: serpApiConfigurada() ? "pulado" : "desativado",
@@ -84,11 +99,14 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  // 5. Google (SerpAPI) só para as buscas sem produtos, até o limite configurado
+  // 5. Google Imagens (SerpAPI): 1 busca por termo cobre todas as lojas escolhidas.
+  //    Com só a Shein, vai apenas para os termos em que o scraper não trouxe produtos.
   if (serpApiConfigurada()) {
-    const semProdutos = resultados.filter((r) => r.produtos.length === 0).slice(0, maxTermosSerpApi());
-    const doGoogle = await Promise.allSettled(semProdutos.map((r) => buscarAnunciosNoGoogle(r.termo)));
-    semProdutos.forEach((resultado, i) => {
+    const outrasLojas = lojas.some((id) => id !== "shein");
+    const precisam = resultados.filter((r) => outrasLojas || r.produtos.length === 0).slice(0, maxTermosSerpApi());
+    const excluir = filtroDePublico(entrada);
+    const doGoogle = await Promise.allSettled(precisam.map((r) => buscarAnunciosNoGoogle(r.termo, lojas, excluir)));
+    precisam.forEach((resultado, i) => {
       const g = doGoogle[i];
       if (g?.status === "fulfilled") {
         resultado.statusAnuncios = g.value.status;
@@ -111,7 +129,7 @@ export async function POST(req: NextRequest) {
       ? `peca="${entrada.tipoPeca === "outra" ? entrada.tipoOutro : entrada.tipoPeca}" publico="${entrada.publico ?? ""}"`
       : `ocasiao="${entrada.ocasiao}"`;
   console.info(
-    `[buscar] modo=${entrada.modo} ${pedido} buscas=${resultados.length} origem=${origem} ` +
+    `[buscar] modo=${entrada.modo} lojas=${lojas.join(",")} ${pedido} buscas=${resultados.length} origem=${origem} ` +
       `scraper=[${resultados.map((r) => r.status).join(",")}] produtos=${resposta.totalProdutos} ` +
       `anuncios=${resposta.totalAnuncios} tempo=${((Date.now() - inicio) / 1000).toFixed(1)}s`,
   );

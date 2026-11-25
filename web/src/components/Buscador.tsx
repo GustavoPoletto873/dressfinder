@@ -9,12 +9,14 @@
  * pintura. Trocar de modo limpa os resultados e cancela a busca em andamento.
  */
 import { useEffect, useRef, useState } from "react";
-import { linkBuscaGoogle, linkBuscaShein } from "@/lib/links";
+import { linkDaLoja, linkGoogle, lojaPorId } from "@/lib/lojas";
 import { gerarBuscasPorRegras } from "@/lib/termosRegras";
 import { esquemaEntrada, type Entrada, type Modo, type RespostaBusca } from "@/lib/tipos";
 import { Carregando } from "./comum/Carregando";
+import { useLojasEscolhidas } from "./comum/lojasEscolhidas";
 import { aoTrocarModo, sincronizarCorDaBarra, useModo } from "./comum/modo";
 import { Resultados } from "./comum/Resultados";
+import { SeletorLojas } from "./comum/SeletorLojas";
 import {
   FormularioRoupas,
   paraEnvioRoupas,
@@ -35,8 +37,11 @@ function respostaLocal(entrada: Entrada): RespostaBusca {
   return {
     buscas: gerarBuscasPorRegras(entrada).map((b) => ({
       ...b,
-      linkShein: linkBuscaShein(b.termo),
-      linkGoogle: linkBuscaGoogle(b.termo),
+      links: entrada.lojas.map((id) => {
+        const loja = lojaPorId(id)!;
+        return { loja: id, nome: loja.nome, ...linkDaLoja(loja, b.termo) };
+      }),
+      linkGoogle: linkGoogle(entrada.lojas, b.termo),
       status: "erro" as const,
       produtos: [],
       statusAnuncios: "erro" as const,
@@ -54,6 +59,7 @@ const CLASSE_CARTAO =
 
 export function Buscador() {
   const modo = useModo();
+  const { lojas } = useLojasEscolhidas();
   const [vestidos, setVestidos] = useState<ValoresVestidos>(VALORES_INICIAIS_VESTIDOS);
   const [roupas, setRoupas] = useState<ValoresRoupas>(VALORES_INICIAIS_ROUPAS);
   const [erros, setErros] = useState<Record<Modo, string[]>>({ vestidos: [], roupas: [] });
@@ -87,7 +93,8 @@ export function Buscador() {
 
   async function buscar() {
     const modoDaBusca = modo;
-    const envio = modoDaBusca === "roupas" ? paraEnvioRoupas(roupas) : paraEnvioVestidos(vestidos);
+    const base = modoDaBusca === "roupas" ? paraEnvioRoupas(roupas) : paraEnvioVestidos(vestidos);
+    const envio = { ...base, lojas };
     const validacao = esquemaEntrada.safeParse(envio);
     if (!validacao.success) {
       // as etapas obrigatórias já são conferidas pela jornada; aqui sobram erros como a faixa de preço
@@ -98,7 +105,8 @@ export function Buscador() {
     definirErros(modoDaBusca, []);
     setCarregando(true);
     setResposta(null);
-    setResumo(envio.modo === "roupas" ? resumoRoupas(envio) : resumoVestidos(envio));
+    const nomesLojas = lojas.map((id) => lojaPorId(id)?.nome).filter(Boolean).join(", ");
+    setResumo([...(envio.modo === "roupas" ? resumoRoupas(envio) : resumoVestidos(envio)), `em ${nomesLojas}`]);
     rolarPara(areaResultados.current);
 
     buscaAtual.current?.controle.abort();
@@ -136,11 +144,15 @@ export function Buscador() {
 
   return (
     <div className="space-y-16">
-      <div ref={formVestidos} className={`so-vestidos ${CLASSE_CARTAO}`}>
-        <FormularioVestidos valores={vestidos} aoMudar={setVestidos} aoEnviar={buscar} carregando={carregando} erros={erros.vestidos} />
-      </div>
-      <div ref={formRoupas} className={`so-roupas ${CLASSE_CARTAO}`}>
-        <FormularioRoupas valores={roupas} aoMudar={setRoupas} aoEnviar={buscar} carregando={carregando} erros={erros.roupas} />
+      <div className="space-y-5">
+        {/* lojas onde procurar: as mesmas nos dois modos */}
+        <SeletorLojas />
+        <div ref={formVestidos} className={`so-vestidos ${CLASSE_CARTAO}`}>
+          <FormularioVestidos valores={vestidos} aoMudar={setVestidos} aoEnviar={buscar} carregando={carregando} erros={erros.vestidos} />
+        </div>
+        <div ref={formRoupas} className={`so-roupas ${CLASSE_CARTAO}`}>
+          <FormularioRoupas valores={roupas} aoMudar={setRoupas} aoEnviar={buscar} carregando={carregando} erros={erros.roupas} />
+        </div>
       </div>
 
       <div ref={areaResultados} className="scroll-mt-6" aria-busy={carregando}>
