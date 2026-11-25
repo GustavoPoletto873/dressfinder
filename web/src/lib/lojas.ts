@@ -6,6 +6,11 @@
  * grupos. Ficou de fora a Privalia: é um clube fechado (as peças só aparecem
  * depois do cadastro), então nem a busca do Google nem o link funcionariam.
  *
+ * Os links são os endereços normais dos sites (páginas de produto e de busca).
+ * Com o app da loja instalado, o próprio celular abre o app quando a loja
+ * declara isso (apple-app-site-association / assetlinks.json); por isso
+ * preferimos a busca da própria loja ao Google sempre que ela existe.
+ *
  * Todas as lojas escolhidas são consultadas numa ÚNICA busca do Google
  * Imagens por termo ("(site:a OR site:b) termo"), então escolher mais lojas
  * não gasta mais créditos da SerpAPI.
@@ -112,6 +117,8 @@ export const LOJAS: Loja[] = [
     sites: ["lojasrenner.com.br"],
     host: /(^|\.)lojasrenner\.com\.br$/,
     produto: /\/p\//,
+    // formulário de busca do próprio site: <form action="/b"> com o campo Ntt
+    busca: (termo) => `https://www.lojasrenner.com.br/b?Ntt=${codificar(termo)}`,
   },
   {
     id: "cea",
@@ -131,6 +138,7 @@ export const LOJAS: Loja[] = [
     sites: ["riachuelo.com.br"],
     host: /(^|\.)riachuelo\.com\.br$/,
     produto: /\d{6,}/,
+    busca: (termo) => `https://www.riachuelo.com.br/busca?q=${codificar(termo)}`,
   },
   {
     id: "marisa",
@@ -140,6 +148,7 @@ export const LOJAS: Loja[] = [
     sites: ["marisa.com.br"],
     host: /(^|\.)marisa\.com\.br$/,
     produto: /\/p\/\d+/,
+    busca: (termo) => `https://www.marisa.com.br/search?text=${codificar(termo)}`,
   },
   {
     id: "hering",
@@ -169,6 +178,7 @@ export const LOJAS: Loja[] = [
     sites: ["posthaus.com.br"],
     host: /(^|\.)posthaus\.com\.br$/,
     produto: /_art\d+/,
+    busca: (termo) => `https://www.posthaus.com.br/busca?palavra=${codificar(termo)}`,
   },
 
   // Curadoria e luxo
