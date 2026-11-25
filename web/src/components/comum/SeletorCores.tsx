@@ -6,8 +6,10 @@
  */
 import { useState, type CSSProperties } from "react";
 import { alternarNaLista, CampoLivre, contemNaLista, Grupo, itensDaLista } from "./campos";
+import { useCartela } from "./cartela";
 import { IconeCheck, IconeFechar } from "./icones";
 import { CORES_CLARAS, GRUPOS_CORES, MAX_CORES, TODAS_AS_CORES } from "./paletaCores";
+import { CartelaNoSeletor } from "./QuizCores";
 
 /** Bolinha de cor com o nome embaixo. */
 function BolinhaCor({
@@ -15,12 +17,15 @@ function BolinhaCor({
   fundo,
   ativa,
   bloqueada,
+  sugerida,
   onClick,
 }: {
   nome: string;
   fundo: string;
   ativa: boolean;
   bloqueada: boolean;
+  /** Faz parte da cartela da usuária (quiz de cores). */
+  sugerida: boolean;
   onClick: () => void;
 }) {
   const clara = CORES_CLARAS.has(nome);
@@ -30,7 +35,8 @@ function BolinhaCor({
       onClick={onClick}
       aria-pressed={ativa}
       aria-disabled={bloqueada}
-      title={nome}
+      aria-label={sugerida ? `${nome} (da sua cartela)` : nome}
+      title={sugerida ? `${nome} · da sua cartela` : nome}
       className={
         "group flex w-[3.75rem] flex-col items-center gap-1.5 rounded-xl py-1 transition-opacity " +
         (bloqueada ? "opacity-55" : "")
@@ -49,6 +55,9 @@ function BolinhaCor({
           <span className="grid size-5 place-items-center rounded-full bg-superficie/90 text-primaria-forte shadow-sm">
             <IconeCheck className="size-3.5" strokeWidth={2.6} />
           </span>
+        )}
+        {sugerida && (
+          <span data-cartela className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-superficie bg-primaria" />
         )}
       </span>
       <span className={"text-center text-[11px] leading-tight " + (ativa ? "font-semibold text-primaria-forte" : "text-texto")}>
@@ -75,6 +84,7 @@ export function SeletorCores({
   aoMudarCorOutra: (corOutra: string) => void;
 }) {
   const coresEscolhidas = itensDaLista(cor);
+  const cartela = useCartela();
   const [avisoLimite, setAvisoLimite] = useState(false);
   const alternarCor = (nome: string) => {
     if (!contemNaLista(cor, nome) && coresEscolhidas.length >= MAX_CORES) {
@@ -94,6 +104,9 @@ export function SeletorCores({
           Escolha até {MAX_CORES}. Buscamos cada uma como opção.
         </p>
       )}
+
+      {/* quiz de coloração pessoal: convite ou a cartela já descoberta */}
+      <CartelaNoSeletor coresEscolhidas={coresEscolhidas} aoUsarCores={(cores) => aoMudarCor(cores.join(", "))} />
 
       {/* escolhidas, com atalho para tirar */}
       {coresEscolhidas.length > 0 && (
@@ -131,6 +144,7 @@ export function SeletorCores({
                     fundo={c.fundo}
                     ativa={ativa}
                     bloqueada={!ativa && coresEscolhidas.length >= MAX_CORES}
+                    sugerida={Boolean(cartela?.cores.includes(c.nome))}
                     onClick={() => alternarCor(c.nome)}
                   />
                 );

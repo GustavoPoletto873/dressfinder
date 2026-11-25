@@ -181,6 +181,13 @@ export const IconeLixeira = (p: P) => (
   </svg>
 );
 
+export const IconeRelogio = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7.5V12l3 2" />
+  </svg>
+);
+
 /** Flor de cinco pétalas usada como enfeite e no botão principal. */
 export const IconeFlor = (p: P) => (
   <svg viewBox="-12 -12 24 24" aria-hidden {...p}>

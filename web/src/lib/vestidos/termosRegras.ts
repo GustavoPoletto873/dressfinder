@@ -17,6 +17,62 @@ interface PerfilOcasiao {
 
 const PERFIS: { padrao: RegExp; perfil: PerfilOcasiao }[] = [
   // ocasiões mais específicas primeiro (ex.: "madrinha de casamento" antes de "casamento")
+  // trajes do convite (guia de trajes) mandam na formalidade: vêm antes de tudo
+  {
+    padrao: /black tie|traje a rigor|\bgala\b/,
+    perfil: {
+      chave: "gala",
+      ideias: [
+        ["longo gala bordado", "Longo de gala", "Black tie pede vestido longo, até o chão, em tecido nobre."],
+        ["longo cetim festa", "Longo de cetim", "O cetim é nobre e tem o caimento ideal para a noite."],
+        ["longo brilho paetê", "Longo com brilho", "Bordado e paetê são bem-vindos nos eventos mais formais."],
+      ],
+    },
+  },
+  {
+    padrao: /passeio completo/,
+    perfil: {
+      chave: "festa elegante",
+      ideias: [
+        ["longo elegante festa", "Longo elegante", "O passeio completo pede longo ou midi sofisticado, em tecido nobre."],
+        ["midi cetim festa", "Midi de cetim", "Um midi de cetim cumpre o traje com elegância."],
+        ["longo renda festa", "Longo de renda", "A renda é nobre e combina com festas à noite."],
+      ],
+    },
+  },
+  {
+    padrao: /esporte fino/,
+    perfil: {
+      chave: "elegante",
+      ideias: [
+        ["midi elegante crepe", "Midi elegante", "Esporte fino pede algo arrumado, sem formalidade, e o midi acerta em cheio."],
+        ["chemise elegante", "Chemise", "O chemise é arrumado e confortável na medida certa."],
+        ["curto elegante alfaiataria", "Curto elegante", "Um curto na altura do joelho, com corte limpo, funciona bem."],
+      ],
+    },
+  },
+  {
+    padrao: /traje (de )?passeio|traje social/,
+    perfil: {
+      chave: "social elegante",
+      ideias: [
+        ["midi social elegante", "Midi social", "O traje passeio pede midi ou curto na altura do joelho, sem exageros."],
+        ["midi renda delicado", "Renda delicada", "Renda leve é elegante sem ser de gala."],
+        ["midi crepe elegante", "Midi de crepe", "O crepe tem caimento bonito e quase não amassa."],
+      ],
+    },
+  },
+  {
+    padrao: /traje (esporte|casual)/,
+    perfil: {
+      chave: "casual",
+      ideias: [
+        ["casual malha confortável", "Malha confortável", "Traje esporte pede conforto: malha e modelos soltinhos são ideais."],
+        ["chemise jeans", "Chemise jeans", "O chemise jeans é descontraído e combina com tênis."],
+        ["curto soltinho estampado", "Soltinho estampado", "Estampas e modelos soltinhos são a cara de um evento descontraído."],
+      ],
+    },
+  },
   {
     padrao: /madrinha/,
     perfil: {

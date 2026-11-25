@@ -13,6 +13,16 @@ Os dois modos têm o mesmo layout, a mesma tipografia e os mesmos componentes: �
 
 **Flores na página inteira.** Além dos cantos, ramos se espalham pelas laterais ao longo de toda a altura da página e nos cantos do rodapé ([web/src/components/comum/Decoracao.tsx](web/src/components/comum/Decoracao.tsx)). A cada troca de modo, o conjunto de flores que entra cresce de novo (caules se desenham e as flores desabrocham).
 
+**Recursos para a usuária** (todos sem IA e sem gastar créditos da SerpAPI):
+
+- **Qual eu levo?**: na gaveta de favoritos, ela marca de 2 a 4 peças e manda um link no WhatsApp (ou copia). A amiga abre `/qual-eu-levo`, vê as peças lado a lado, toca na que levaria e responde pelo WhatsApp com a mensagem pronta. As peças vão **dentro do próprio link** (depois do `#`, comprimidas), então não há banco de dados. Por segurança, a página só aceita links https de lojas do catálogo; um link adulterado com outro site é recusado. A prévia do link no WhatsApp tem imagem própria.
+- **Cores que combinam com você**: na etapa de cores, um quiz de 5 perguntas (veias, joias, sol, branco perto do rosto e contraste) indica uma cartela simplificada (Primavera, Outono, Verão, Inverno ou Neutra), em [web/src/lib/coloracao.ts](web/src/lib/coloracao.ts). "Usar minhas cores" escolhe 4 cores da cartela, e as cores dela ganham um pontinho na paleta. Fica guardada no navegador e vale para os dois modos.
+- **Guia de traje** (Vestidos): na etapa da ocasião, "Recebeu um convite com traje?" explica esporte, praia, esporte fino, passeio, passeio completo e black tie, com dicas de convidada de casamento ([web/src/lib/trajes.ts](web/src/lib/trajes.ts)). "Usar na busca" junta o traje à ocasião ("casamento à noite, traje black tie"), e o gerador por regras tem buscas próprias para cada traje.
+- **Filtro por loja** nos resultados: com mais de uma loja, chips "Todas · Shein 3 · Renner 3…" mostram só as peças de uma loja.
+- **Complete o look** (Roupas): depois da busca, 3 sugestões de peças que combinam (ex.: calça de trabalho → camisa social, blazer e scarpin), só como links de busca nas lojas escolhidas ([web/src/lib/roupas/completeOLook.ts](web/src/lib/roupas/completeOLook.ts)).
+- **Buscas recentes**: as últimas buscas de cada modo ficam como chips acima da jornada; um toque refaz a busca.
+- **App instalável** (PWA): manifesto, ícones e um service worker ([web/public/sw.js](web/public/sw.js)) que guarda a página e os arquivos do app. Instalado na tela inicial, abre mesmo sem internet, com os favoritos (a busca em si precisa de internet). Os ícones PNG em `web/public` foram gerados a partir do `icon.svg`.
+
 O app foi pensado para **nunca deixar a pessoa sem resposta**. Cada busca passa por uma cadeia de alternativas:
 
 ```

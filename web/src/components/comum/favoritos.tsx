@@ -9,8 +9,10 @@
  * enquanto a página estiver aberta.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { codificarEscolha, linkWhatsApp, MAX_PECAS, MIN_PECAS, pecaDoFavorito } from "@/lib/compartilhar";
 import { lojaDoLink, lojaPorId } from "@/lib/lojas";
-import { IconeCoracao, IconeExterno, IconeFechar, IconeLixeira } from "./icones";
+import { classeCampo } from "./campos";
+import { IconeCheck, IconeCoracao, IconeExterno, IconeFechar, IconeLixeira } from "./icones";
 import { useKitDecoracao } from "./kitDecoracao";
 
 export interface Favorito {
@@ -161,6 +163,36 @@ export function BotaoFavoritos() {
   const total = lista.length;
   const anterior = useRef(total);
 
+  // "Qual eu levo?": escolha de 2 a 4 peças para mandar às amigas
+  const [escolhendo, setEscolhendo] = useState(false);
+  const [marcadas, setMarcadas] = useState<string[]>([]);
+  const [nome, setNome] = useState("");
+  const podeEnviar = marcadas.length >= MIN_PECAS && marcadas.length <= MAX_PECAS;
+  const alternarMarcada = (url: string) => {
+    if (marcadas.includes(url)) setMarcadas(marcadas.filter((u) => u !== url));
+    else if (marcadas.length >= MAX_PECAS) mostrarAviso(`Dá para mandar até ${MAX_PECAS} peças`);
+    else setMarcadas([...marcadas, url]);
+  };
+  async function compartilhar(como: "whatsapp" | "copiar") {
+    // mantém a ordem da lista de favoritos
+    const pecas = lista
+      .filter((f) => marcadas.includes(f.url))
+      .map(pecaDoFavorito)
+      .filter((p) => p !== null);
+    if (pecas.length < MIN_PECAS) return;
+    const link = `${location.origin}/qual-eu-levo#${await codificarEscolha(pecas, nome)}`;
+    if (como === "whatsapp") {
+      window.open(linkWhatsApp(`Me ajuda a escolher? Qual eu levo? 💕\n${link}`), "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      mostrarAviso("Link copiado. É só colar na conversa");
+    } catch {
+      window.prompt("Copie o link:", link);
+    }
+  }
+
   // dá um "pulinho" no contador quando entra um favorito novo
   useEffect(() => {
     if (total <= anterior.current) {
@@ -201,6 +233,7 @@ export function BotaoFavoritos() {
       <dialog
         ref={gaveta}
         aria-label="Seus favoritos"
+        onClose={() => setEscolhendo(false)}
         onClick={(e) => {
           // clique fora do painel fecha a gaveta
           if (e.target === e.currentTarget) e.currentTarget.close();
@@ -236,42 +269,141 @@ export function BotaoFavoritos() {
               </p>
             </div>
           ) : (
-            <ul className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
-              {lista.map((f) => (
-                <li key={f.url} className="flex gap-3 rounded-2xl border border-borda bg-superficie p-3 shadow-suave">
-                  {f.imagem ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={f.imagem} alt="" referrerPolicy="no-referrer" className="h-24 w-18 shrink-0 rounded-xl object-cover" />
-                  ) : (
-                    <div className="grid h-24 w-18 shrink-0 place-items-center rounded-xl bg-primaria-suave text-primaria">
-                      <IconeCoracao className="size-6" />
-                    </div>
-                  )}
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <p className="line-clamp-2 text-sm leading-snug">{f.titulo}</p>
-                    {f.preco && <p className="mt-1 font-semibold">{f.preco}</p>}
-                    <div className="mt-auto flex items-center gap-2 pt-2">
-                      <a
-                        href={f.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-primaria px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-primaria-forte"
-                      >
-                        Ver na {nomeDaLoja(f)} <IconeExterno className="size-3.5" />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => remover(f.url)}
-                        aria-label={`Remover ${f.titulo}`}
-                        className="grid size-8 place-items-center rounded-full text-texto-suave transition hover:bg-primaria-suave hover:text-primaria-forte"
-                      >
-                        <IconeLixeira className="size-4" />
-                      </button>
-                    </div>
+            <>
+              {/* "Qual eu levo?": convite (com 2 ou mais peças) ou instrução do modo de escolha */}
+              {total >= MIN_PECAS && !escolhendo && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEscolhendo(true);
+                    setMarcadas(lista.filter((f) => pecaDoFavorito(f)).slice(0, MAX_PECAS).map((f) => f.url));
+                  }}
+                  className="group mx-6 mt-5 flex items-center gap-3 rounded-2xl border border-dashed border-destaque/50 bg-primaria-suave/60 px-4 py-3 text-left transition hover:border-solid hover:bg-primaria-suave"
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-superficie text-primaria shadow-suave transition group-hover:scale-110">
+                    <IconeCoracao cheio className="size-5" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block font-medium">Qual eu levo?</span>
+                    <span className="block text-sm text-texto-suave">Mande de 2 a 4 peças para as amigas votarem no WhatsApp.</span>
+                  </span>
+                </button>
+              )}
+              {escolhendo && (
+                <p className="mx-6 mt-5 rounded-2xl bg-primaria-suave px-4 py-3 text-sm text-primaria-forte" role="status">
+                  Toque nas peças para marcar de {MIN_PECAS} a {MAX_PECAS}. Marcadas: <strong>{marcadas.length}</strong>
+                </p>
+              )}
+
+              <ul className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
+                {lista.map((f) => {
+                  const compartilhavel = Boolean(pecaDoFavorito(f));
+                  const marcada = marcadas.includes(f.url);
+                  return (
+                    <li
+                      key={f.url}
+                      className={
+                        "relative flex gap-3 rounded-2xl border bg-superficie p-3 shadow-suave transition " +
+                        (escolhendo && marcada ? "border-primaria ring-2 ring-primaria/30" : "border-borda")
+                      }
+                    >
+                      {escolhendo && (
+                        // no modo de escolha, o cartão inteiro vira um botão de marcar
+                        <button
+                          type="button"
+                          disabled={!compartilhavel}
+                          onClick={() => alternarMarcada(f.url)}
+                          aria-pressed={marcada}
+                          aria-label={`${marcada ? "Desmarcar" : "Marcar"} ${f.titulo}`}
+                          className="absolute inset-0 z-10 rounded-2xl disabled:cursor-not-allowed"
+                        />
+                      )}
+                      <div className="relative shrink-0">
+                        {f.imagem ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={f.imagem} alt="" referrerPolicy="no-referrer" className="h-24 w-18 rounded-xl object-cover" />
+                        ) : (
+                          <div className="grid h-24 w-18 place-items-center rounded-xl bg-primaria-suave text-primaria">
+                            <IconeCoracao className="size-6" />
+                          </div>
+                        )}
+                        {escolhendo && compartilhavel && (
+                          <span
+                            className={
+                              "absolute left-1 top-1 grid size-6 place-items-center rounded-full border-2 border-white shadow-sm " +
+                              (marcada ? "bg-primaria text-white" : "bg-white/80")
+                            }
+                          >
+                            {marcada && <IconeCheck className="size-3.5" strokeWidth={3} />}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <p className="line-clamp-2 text-sm leading-snug">{f.titulo}</p>
+                        {f.preco && <p className="mt-1 font-semibold">{f.preco}</p>}
+                        {escolhendo && !compartilhavel && <p className="mt-1 text-xs text-texto-suave">Esta loja não entra no “Qual eu levo?”.</p>}
+                        <div className="mt-auto flex items-center gap-2 pt-2">
+                          <a
+                            href={f.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-primaria px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-primaria-forte"
+                          >
+                            Ver na {nomeDaLoja(f)} <IconeExterno className="size-3.5" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => remover(f.url)}
+                            aria-label={`Remover ${f.titulo}`}
+                            className="grid size-8 place-items-center rounded-full text-texto-suave transition hover:bg-primaria-suave hover:text-primaria-forte"
+                          >
+                            <IconeLixeira className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {escolhendo && (
+                <div className="space-y-3 border-t border-borda bg-fundo px-6 py-4">
+                  <input
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    maxLength={30}
+                    placeholder="Seu nome (opcional)"
+                    aria-label="Seu nome, para as amigas saberem quem pediu (opcional)"
+                    className={classeCampo}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => compartilhar("whatsapp")}
+                      disabled={!podeEnviar}
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primaria px-4 text-sm font-semibold text-white shadow-elevada transition hover:bg-primaria-forte active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
+                    >
+                      Mandar no WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => compartilhar("copiar")}
+                      disabled={!podeEnviar}
+                      className="h-11 rounded-full border border-borda bg-superficie px-4 text-sm font-medium transition hover:border-destaque/50 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      Copiar link
+                    </button>
                   </div>
-                </li>
-              ))}
-            </ul>
+                  <button
+                    type="button"
+                    onClick={() => setEscolhendo(false)}
+                    className="w-full text-center text-sm text-texto-suave underline-offset-4 hover:underline"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </dialog>

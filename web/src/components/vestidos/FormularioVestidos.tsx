@@ -6,6 +6,7 @@
  */
 import { useState } from "react";
 import { OCASIOES_SUGERIDAS, TAMANHOS } from "@/lib/tipos";
+import { ocasiaoComTraje, ocasiaoSemTraje, trajeDaOcasiao } from "@/lib/trajes";
 import {
   CampoLivre,
   CampoObservacoes,
@@ -32,6 +33,7 @@ import {
 import { Jornada, type Passo } from "../comum/Jornada";
 import { SeletorCores } from "../comum/SeletorCores";
 import { TECIDOS_VESTIDOS } from "../comum/tecidos";
+import { GuiaTrajes } from "./GuiaTrajes";
 
 export interface ValoresVestidos {
   ocasiao: string;
@@ -140,7 +142,11 @@ export function FormularioVestidos({ valores, aoMudar, aoEnviar, carregando, err
   const alternar = (campo: keyof ValoresVestidos, valor: string) =>
     definir(campo, valores[campo].toLowerCase() === valor.toLowerCase() ? "" : valor);
 
-  const ocasiaoDaLista = OCASIOES_SUGERIDAS.some((o) => o === valores.ocasiao);
+  // o traje (guia de trajes) fica junto da ocasião: "casamento à noite, traje black tie"
+  const baseOcasiao = ocasiaoSemTraje(valores.ocasiao);
+  const trajeAtual = trajeDaOcasiao(valores.ocasiao);
+  const comTraje = (ocasiao: string) => (trajeAtual ? ocasiaoComTraje(ocasiao, trajeAtual) : ocasiao);
+  const ocasiaoDaLista = OCASIOES_SUGERIDAS.some((o) => o === baseOcasiao);
   const estiloDaLista = ESTILOS.some(([e]) => e === valores.estilo.toLowerCase());
   const qtdDetalhes = [valores.decoteManga, valores.tamanho, valores.precoMin || valores.precoMax, valores.observacoes].filter(Boolean).length;
 
@@ -157,17 +163,18 @@ export function FormularioVestidos({ valores, aoMudar, aoEnviar, carregando, err
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {OCASIOES_SUGERIDAS.map((o) => (
-              <CartaoOpcao key={o} ativo={valores.ocasiao === o} onClick={() => definir("ocasiao", o)} titulo={o} Icone={ICONES_OCASIAO[o]} />
+              <CartaoOpcao key={o} ativo={baseOcasiao === o} onClick={() => definir("ocasiao", comTraje(o))} titulo={o} Icone={ICONES_OCASIAO[o]} />
             ))}
           </div>
           <CampoLivre
             id="ocasiao"
-            valor={ocasiaoDaLista ? "" : valores.ocasiao}
-            aoMudar={(v) => definir("ocasiao", v)}
+            valor={ocasiaoDaLista ? "" : baseOcasiao}
+            aoMudar={(v) => definir("ocasiao", comTraje(v))}
             convite="Não está na lista? Escreva do seu jeito"
             exemplo="Ex.: casamento no campo ao entardecer"
             rotulo="Ocasião"
           />
+          <GuiaTrajes ocasiao={valores.ocasiao} aoMudar={(v) => definir("ocasiao", v)} />
         </div>
       ),
     },
