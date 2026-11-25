@@ -9,8 +9,11 @@ export default function PaginaInicial() {
       {/* flores da página inteira (um conjunto por modo, com fade e crescendo a cada troca) */}
       <DecoracaoPagina />
 
-      {/* switch Vestidos | Roupas, no topo e centralizado */}
-      <div data-regressao-ignorar className="absolute left-1/2 top-3 z-30 -translate-x-1/2 sm:top-5">
+      {/* switch Vestidos | Roupas, no topo e centralizado (em telas muito estreitas, à esquerda, para não cobrir os favoritos) */}
+      <div
+        data-regressao-ignorar
+        className="absolute left-1/2 top-3 z-30 -translate-x-1/2 max-[359px]:left-3 max-[359px]:translate-x-0 sm:top-5"
+      >
         <SwitchModo />
       </div>
 
