@@ -102,7 +102,7 @@ export function Buscador() {
     <div className="space-y-16">
       <div
         ref={areaFormulario}
-        className="mx-auto max-w-2xl scroll-mt-6 rounded-[2.25rem] border border-linha bg-papel/85 p-6 shadow-suave backdrop-blur-sm sm:p-10"
+        className="mx-auto max-w-2xl scroll-mt-6 rounded-[2.25rem] border border-borda bg-superficie/85 p-6 shadow-suave backdrop-blur-sm sm:p-10"
       >
         <Formulario valores={valores} aoMudar={setValores} aoEnviar={buscar} carregando={carregando} erros={erros} />
       </div>

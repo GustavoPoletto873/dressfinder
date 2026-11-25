@@ -93,8 +93,8 @@ function Chip({
         "inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-all duration-200 " +
         "active:scale-95 " +
         (ativo
-          ? "border-rosa bg-rosa text-white shadow-[0_6px_16px_-6px_rgb(194_106_122/0.7)]"
-          : "border-linha bg-papel text-tinta hover:-translate-y-0.5 hover:border-rosa/50 hover:bg-rosa-bebe")
+          ? "border-primaria bg-primaria text-white shadow-chip"
+          : "border-borda bg-superficie text-texto hover:-translate-y-0.5 hover:border-destaque/50 hover:bg-primaria-suave")
       }
     >
       {bolinha && (
@@ -113,12 +113,12 @@ function Secao({ numero, titulo, ajuda, children }: { numero: number; titulo: st
   return (
     <section className="space-y-4">
       <header className="flex items-baseline gap-3">
-        <span className="font-cursiva text-3xl leading-none text-rosa" aria-hidden>
+        <span className="font-cursiva text-3xl leading-none text-primaria" aria-hidden>
           {numero}
         </span>
         <div>
           <h2 className="font-titulo text-2xl font-semibold leading-tight">{titulo}</h2>
-          {ajuda && <p className="text-sm text-suave">{ajuda}</p>}
+          {ajuda && <p className="text-sm text-texto-suave">{ajuda}</p>}
         </div>
       </header>
       {children}
@@ -129,7 +129,7 @@ function Secao({ numero, titulo, ajuda, children }: { numero: number; titulo: st
 function Grupo({ rotulo, children, htmlFor }: { rotulo: string; children: ReactNode; htmlFor?: string }) {
   return (
     <div className="space-y-2.5">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-tinta">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-texto">
         {rotulo}
       </label>
       {children}
@@ -138,12 +138,12 @@ function Grupo({ rotulo, children, htmlFor }: { rotulo: string; children: ReactN
 }
 
 const classeCampo =
-  "w-full rounded-2xl border border-linha bg-papel px-4 py-3 text-base text-tinta placeholder:text-suave/70 " +
-  "transition focus:border-rosa focus:outline-none focus:ring-4 focus:ring-rosa/15";
+  "w-full rounded-2xl border border-borda bg-superficie px-4 py-3 text-base text-texto placeholder:text-texto-suave/70 " +
+  "transition focus:border-destaque focus:outline-none focus:ring-4 focus:ring-destaque/15";
 
 const classeCampoPequeno =
-  "w-full rounded-xl border border-dashed border-linha bg-transparent px-3.5 py-2 text-sm text-tinta placeholder:text-suave/80 " +
-  "transition focus:border-solid focus:border-rosa focus:bg-papel focus:outline-none focus:ring-4 focus:ring-rosa/15";
+  "w-full rounded-xl border border-dashed border-borda bg-transparent px-3.5 py-2 text-sm text-texto placeholder:text-texto-suave/80 " +
+  "transition focus:border-solid focus:border-destaque focus:bg-superficie focus:outline-none focus:ring-4 focus:ring-destaque/15";
 
 /** Silhueta de vestido com a saia no comprimento escolhido. */
 function Silhueta({ comprimento }: { comprimento: "curto" | "midi" | "longo" }) {
@@ -193,18 +193,18 @@ function BolinhaCor({
         className={
           "relative grid size-10 place-items-center rounded-full transition-all duration-200 group-active:scale-90 " +
           (ativa
-            ? "ring-2 ring-rosa ring-offset-2 ring-offset-papel"
+            ? "ring-2 ring-destaque ring-offset-2 ring-offset-superficie"
             : (clara ? "ring-1 ring-black/15 " : "ring-1 ring-black/5 ") + "group-hover:scale-110")
         }
         style={{ background: fundo } as CSSProperties}
       >
         {ativa && (
-          <span className="grid size-5 place-items-center rounded-full bg-papel/90 text-rosa-forte shadow-sm">
+          <span className="grid size-5 place-items-center rounded-full bg-superficie/90 text-primaria-forte shadow-sm">
             <IconeCheck className="size-3.5" strokeWidth={2.6} />
           </span>
         )}
       </span>
-      <span className={"text-center text-[11px] leading-tight " + (ativa ? "font-semibold text-rosa-forte" : "text-tinta")}>
+      <span className={"text-center text-[11px] leading-tight " + (ativa ? "font-semibold text-primaria-forte" : "text-texto")}>
         {nome}
       </span>
     </button>
@@ -222,21 +222,21 @@ function CartaoTecido({ tecido, ativo, emFoco, onClick }: { tecido: Tecido; ativ
       className={
         "group flex flex-col items-center gap-1.5 rounded-2xl border p-1.5 pb-2 transition-all duration-200 active:scale-95 " +
         (ativo
-          ? "border-rosa bg-rosa-bebe shadow-[0_8px_20px_-10px_rgb(194_106_122/0.8)]"
+          ? "border-destaque bg-primaria-suave shadow-cartao"
           : emFoco
-            ? "border-rosa/40 bg-papel"
-            : "border-linha bg-papel hover:-translate-y-0.5 hover:border-rosa/40")
+            ? "border-destaque/40 bg-superficie"
+            : "border-borda bg-superficie hover:-translate-y-0.5 hover:border-destaque/40")
       }
     >
       <span className="relative block aspect-square w-full overflow-hidden rounded-xl ring-1 ring-black/5">
         <AmostraTecido nome={tecido.nome} className="size-full transition-transform duration-500 group-hover:scale-110" />
         {ativo && (
-          <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-rosa text-white shadow-sm">
+          <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-primaria text-white shadow-sm">
             <IconeCheck className="size-3.5" strokeWidth={2.6} />
           </span>
         )}
       </span>
-      <span className={"text-xs capitalize sm:text-sm " + (ativo ? "font-semibold text-rosa-forte" : "text-tinta")}>{tecido.nome}</span>
+      <span className={"text-xs capitalize sm:text-sm " + (ativo ? "font-semibold text-primaria-forte" : "text-texto")}>{tecido.nome}</span>
     </button>
   );
 }
@@ -245,24 +245,24 @@ function CartaoTecido({ tecido, ativo, emFoco, onClick }: { tecido: Tecido; ativ
 function FichaTecido({ tecido, escolhido, onEscolher }: { tecido: Tecido | null; escolhido: boolean; onEscolher: () => void }) {
   if (!tecido) {
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-dashed border-linha px-4 py-3.5 text-sm text-suave">
-        <IconeInfo className="size-5 shrink-0 text-rosa" />
+      <div className="flex items-center gap-3 rounded-2xl border border-dashed border-borda px-4 py-3.5 text-sm text-texto-suave">
+        <IconeInfo className="size-5 shrink-0 text-primaria" />
         Não sabe a diferença entre os tecidos? Toque em um para ver como ele é ao toque, o caimento e para que ocasiões combina.
       </div>
     );
   }
   return (
-    <div key={tecido.nome} className="surgir overflow-hidden rounded-3xl border border-linha bg-papel shadow-suave">
+    <div key={tecido.nome} className="surgir overflow-hidden rounded-3xl border border-borda bg-superficie shadow-suave">
       <div className="flex gap-4 p-4 sm:p-5">
         <AmostraTecido nome={tecido.nome} className="size-20 shrink-0 rounded-2xl ring-1 ring-black/5 sm:size-24" />
         <div className="min-w-0 flex-1">
           <h3 className="font-titulo text-2xl font-semibold capitalize leading-tight">{tecido.nome}</h3>
-          <p className="font-titulo text-lg italic leading-snug text-suave">{tecido.resumo}</p>
+          <p className="font-titulo text-lg italic leading-snug text-texto-suave">{tecido.resumo}</p>
           <p className="mt-1.5 text-sm leading-relaxed">{tecido.toque}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-linha bg-creme/50 px-4 py-4 sm:px-5">
+      <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-borda bg-fundo/50 px-4 py-4 sm:px-5">
         {ESCALAS.map((e) => (
           <Escala key={e.chave} rotulo={e.rotulo} valor={tecido[e.chave]} min={e.min} max={e.max} />
         ))}
@@ -270,11 +270,11 @@ function FichaTecido({ tecido, escolhido, onEscolher }: { tecido: Tecido | null;
 
       <dl className="space-y-2.5 px-4 py-4 text-sm sm:px-5">
         <div>
-          <dt className="font-medium text-salvia">Combina com</dt>
+          <dt className="font-medium text-secundaria">Combina com</dt>
           <dd className="leading-relaxed">{tecido.idealPara}</dd>
         </div>
         <div>
-          <dt className="font-medium text-rosa-forte">Fique de olho</dt>
+          <dt className="font-medium text-primaria-forte">Fique de olho</dt>
           <dd className="leading-relaxed">{tecido.atencao}</dd>
         </div>
       </dl>
@@ -287,8 +287,8 @@ function FichaTecido({ tecido, escolhido, onEscolher }: { tecido: Tecido | null;
           className={
             "flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98] " +
             (escolhido
-              ? "bg-rosa-bebe text-rosa-forte hover:bg-rosa-claro"
-              : "bg-rosa text-white shadow-[0_6px_16px_-6px_rgb(194_106_122/0.7)] hover:bg-rosa-forte")
+              ? "bg-primaria-suave text-primaria-forte hover:bg-realce"
+              : "bg-primaria text-white shadow-chip hover:bg-primaria-forte")
           }
         >
           {escolhido ? (
@@ -373,7 +373,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
           id="ocasiao"
           aria-label="Ocasião"
           aria-invalid={ocasiaoComErro}
-          className={classeCampo + (ocasiaoComErro ? " border-rosa ring-4 ring-rosa/15" : "")}
+          className={classeCampo + (ocasiaoComErro ? " border-destaque ring-4 ring-destaque/15" : "")}
           placeholder="Ex.: casamento no campo ao entardecer"
           value={valores.ocasiao}
           onChange={(e) => definir("ocasiao", e.target.value)}
@@ -397,12 +397,12 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
                   className={
                     "flex flex-col items-center gap-1.5 rounded-2xl border px-2 pb-2.5 pt-3 transition-all duration-200 active:scale-95 " +
                     (ativo
-                      ? "border-rosa bg-rosa-bebe text-rosa shadow-[0_8px_20px_-10px_rgb(194_106_122/0.8)]"
-                      : "border-linha bg-papel text-suave hover:-translate-y-0.5 hover:border-rosa/40 hover:text-rosa/80")
+                      ? "border-destaque bg-primaria-suave text-primaria shadow-cartao"
+                      : "border-borda bg-superficie text-texto-suave hover:-translate-y-0.5 hover:border-destaque/40 hover:text-primaria/80")
                   }
                 >
                   <Silhueta comprimento={c} />
-                  <span className={"text-sm capitalize " + (ativo ? "font-semibold" : "text-tinta")}>{c}</span>
+                  <span className={"text-sm capitalize " + (ativo ? "font-semibold" : "text-texto")}>{c}</span>
                 </button>
               );
             })}
@@ -410,7 +410,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
         </Grupo>
 
         <Grupo rotulo="Cores e estampas">
-          <p className="-mt-1 text-sm text-suave">
+          <p className="-mt-1 text-sm text-texto-suave">
             Escolha até {MAX_CORES}. Buscamos cada uma como opção.
           </p>
 
@@ -423,14 +423,14 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
                   type="button"
                   onClick={() => alternarCor(c)}
                   aria-label={`Tirar ${c}`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-rosa-bebe py-1 pl-1.5 pr-2.5 text-sm text-rosa-forte transition hover:bg-rosa-claro active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primaria-suave py-1 pl-1.5 pr-2.5 text-sm text-primaria-forte transition hover:bg-realce active:scale-95"
                 >
                   <span className="size-4 rounded-full ring-1 ring-black/10" style={{ background: fundoDaCor(c) }} />
                   {c}
                   <IconeFechar className="size-3.5" />
                 </button>
               ))}
-              <span className="ml-1 text-xs text-suave">
+              <span className="ml-1 text-xs text-texto-suave">
                 {coresEscolhidas.length} de {MAX_CORES}
               </span>
             </div>
@@ -439,7 +439,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
           <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
             {GRUPOS_CORES.map((g) => (
               <div key={g.titulo}>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-suave">{g.titulo}</p>
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-texto-suave">{g.titulo}</p>
                 <div className="flex flex-wrap gap-x-0.5 gap-y-2">
                   {g.cores.map((c) => {
                     const ativa = contemNaLista(valores.cor, c.nome);
@@ -460,7 +460,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
           </div>
 
           {avisoLimiteCores && (
-            <p role="status" className="surgir rounded-xl bg-rosa-bebe px-3.5 py-2 text-sm text-rosa-forte">
+            <p role="status" className="surgir rounded-xl bg-primaria-suave px-3.5 py-2 text-sm text-primaria-forte">
               Você já escolheu {MAX_CORES} cores. Toque em uma delas para tirar e escolher outra.
             </p>
           )}
@@ -494,7 +494,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
         </Grupo>
 
         <Grupo rotulo="Tecido">
-          <p className="-mt-1 text-sm text-suave">Toque em um tecido para escolher e ver como ele é.</p>
+          <p className="-mt-1 text-sm text-texto-suave">Toque em um tecido para escolher e ver como ele é.</p>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
             {TECIDOS.map((t) => (
               <CartaoTecido
@@ -528,26 +528,26 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
       </Secao>
 
       {/* 3. Detalhes finais (abre sob demanda) */}
-      <section className="rounded-3xl border border-linha bg-creme/60">
+      <section className="rounded-3xl border border-borda bg-fundo/60">
         <button
           type="button"
           aria-expanded={detalhesAbertos}
           aria-controls={idDetalhes}
           onClick={() => setDetalhesAbertos((v) => !v)}
-          className="flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left transition hover:bg-rosa-bebe/60"
+          className="flex w-full items-center gap-3 rounded-3xl px-5 py-4 text-left transition hover:bg-primaria-suave/60"
         >
-          <span className="font-cursiva text-3xl leading-none text-rosa" aria-hidden>
+          <span className="font-cursiva text-3xl leading-none text-primaria" aria-hidden>
             3
           </span>
           <span className="flex-1">
             <span className="block font-titulo text-2xl font-semibold leading-tight">Detalhes finais</span>
-            <span className="block text-sm text-suave">
+            <span className="block text-sm text-texto-suave">
               {qtdDetalhes > 0
                 ? `${qtdDetalhes} ${qtdDetalhes === 1 ? "detalhe escolhido" : "detalhes escolhidos"}`
                 : "Decote, manga, tamanho, preço e observações"}
             </span>
           </span>
-          <IconeSeta className={"size-5 text-suave transition-transform duration-300 " + (detalhesAbertos ? "rotate-180" : "")} />
+          <IconeSeta className={"size-5 text-texto-suave transition-transform duration-300 " + (detalhesAbertos ? "rotate-180" : "")} />
         </button>
 
         <div
@@ -602,7 +602,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
                 <div className="grid grid-cols-2 gap-3">
                   {(["precoMin", "precoMax"] as const).map((campo) => (
                     <div key={campo} className="relative">
-                      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-suave">R$</span>
+                      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-texto-suave">R$</span>
                       <input
                         aria-label={campo === "precoMin" ? "Preço mínimo em reais" : "Preço máximo em reais"}
                         className={`${classeCampoPequeno} pl-10`}
@@ -628,7 +628,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
                     onChange={(e) => definir("observacoes", e.target.value)}
                     maxLength={400}
                   />
-                  <span className="pointer-events-none absolute bottom-3 right-4 text-xs text-suave/80">
+                  <span className="pointer-events-none absolute bottom-3 right-4 text-xs text-texto-suave/80">
                     {valores.observacoes.length}/400
                   </span>
                 </div>
@@ -639,7 +639,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
       </section>
 
       {erros.length > 0 && (
-        <div role="alert" className="surgir rounded-2xl border border-rosa/30 bg-rosa-bebe px-4 py-3 text-sm text-rosa-forte">
+        <div role="alert" className="surgir rounded-2xl border border-destaque/30 bg-primaria-suave px-4 py-3 text-sm text-primaria-forte">
           {erros.map((e) => (
             <p key={e}>{e}</p>
           ))}
@@ -651,7 +651,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
         <button
           type="submit"
           disabled={carregando}
-          className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-full bg-rosa px-6 py-4 text-base font-semibold tracking-wide text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-rosa-forte active:translate-y-0 active:scale-[0.98] disabled:cursor-wait disabled:opacity-85"
+          className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-full bg-primaria px-6 py-4 text-base font-semibold tracking-wide text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-primaria-forte active:translate-y-0 active:scale-[0.98] disabled:cursor-wait disabled:opacity-85"
         >
           <IconeFlor className={"size-5 text-white/90 transition-transform duration-500 " + (carregando ? "girar-lento" : "group-hover:rotate-[72deg]")} />
           {carregando ? "Procurando seu vestido…" : "Encontrar meu vestido"}
@@ -665,7 +665,7 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
             setAvisoLimiteCores(false);
             aoMudar(VALORES_INICIAIS);
           }}
-          className="-mt-6 mx-auto block rounded-full px-3 py-1 text-sm text-suave underline-offset-4 transition hover:text-rosa hover:underline"
+          className="-mt-6 mx-auto block rounded-full px-3 py-1 text-sm text-texto-suave underline-offset-4 transition hover:text-primaria hover:underline"
         >
           Limpar escolhas
         </button>

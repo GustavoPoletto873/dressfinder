@@ -1,61 +1,134 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/* Paleta: branco creme, rosa antigo, verde sálvia e lavanda           */
+/* Temas                                                               */
+/*                                                                     */
+/* As cores são variáveis por PAPEL (fundo, superfície, primária...)   */
+/* e o tema é escolhido pelo atributo data-tema no <html>:             */
+/*   - vestidos (padrão): branco creme, rosa antigo e verde sálvia      */
+/*   - roupas: azul soft                                               */
+/* Os componentes nunca usam cores fixas: só as classes do tema         */
+/* (bg-fundo, text-primaria, border-destaque...).                       */
 /* ------------------------------------------------------------------ */
 :root {
   color-scheme: light;
-  --creme: #fdf9f3;
-  --creme-escuro: #f6efe4;
-  --papel: #fffdf9;
-  --tinta: #3f3533;
-  --suave: #85766f;
-  --linha: #ece2d6;
-  --rosa: #c26a7a;
-  --rosa-forte: #a5505f;
-  --rosa-claro: #f8e4e6;
-  --rosa-bebe: #fbeff0;
-  --salvia: #8fa58a;
-  --salvia-claro: #e8efe4;
-  --lavanda: #b7a3d6;
-  --manteiga: #f3d98e;
+  --cor-fundo: #fdf9f3;
+  --cor-fundo-escuro: #f6efe4; /* esqueletos de carregamento */
+  --cor-superficie: #fffdf9; /* cartões e campos */
+  --cor-texto: #3f3533;
+  --cor-texto-suave: #85766f;
+  --cor-borda: #ece2d6;
+  --cor-primaria: #c26a7a; /* fundos de botão (texto branco) e textos grandes */
+  --cor-primaria-forte: #a5505f; /* hover e textos pequenos de destaque */
+  --cor-primaria-suave: #fbeff0; /* fundo de item selecionado */
+  --cor-realce: #f8e4e6; /* seleção de texto e hovers suaves */
+  --cor-destaque: #c26a7a; /* contornos, bordas e marcações (não é texto) */
+  --cor-secundaria: #8fa58a;
+  --cor-secundaria-suave: #e8efe4;
+  --cor-veu: rgb(63 53 51 / 0.35); /* fundo atrás da gaveta */
+  --sombra-suave: 0 1px 2px rgb(120 90 70 / 0.05), 0 8px 24px -8px rgb(120 90 70 / 0.12);
+  --sombra-elevada: 0 2px 4px rgb(120 90 70 / 0.06), 0 18px 40px -12px rgb(160 90 100 / 0.25);
+  --sombra-chip: 0 6px 16px -6px rgb(194 106 122 / 0.7);
+  --sombra-cartao: 0 8px 20px -10px rgb(194 106 122 / 0.8);
+}
+
+/*
+ * Tema Roupas (azul soft). Contraste conferido (WCAG AA):
+ * texto 11,8:1 · texto-suave 4,8:1 · primária-forte sobre fundo 5,6:1 ·
+ * branco sobre primária 4,5:1. O azul #7DA4D6 (destaque) só aparece em
+ * contornos e marcações, nunca como cor de texto.
+ */
+:root[data-tema="roupas"] {
+  --cor-fundo: #f2f7fc;
+  --cor-fundo-escuro: #e4edf7;
+  --cor-superficie: #ffffff;
+  --cor-texto: #1f3350;
+  --cor-texto-suave: #5a6f8c;
+  --cor-borda: #d6e3f1;
+  --cor-primaria: #4d78b0;
+  --cor-primaria-forte: #3d6598;
+  --cor-primaria-suave: #eaf2fb;
+  --cor-realce: #dce9f7;
+  --cor-destaque: #7da4d6;
+  --cor-secundaria: #457770;
+  --cor-secundaria-suave: #e3f0ee;
+  --cor-veu: rgb(31 51 80 / 0.35);
+  --sombra-suave: 0 1px 2px rgb(60 90 130 / 0.05), 0 8px 24px -8px rgb(60 90 130 / 0.12);
+  --sombra-elevada: 0 2px 4px rgb(60 90 130 / 0.06), 0 18px 40px -12px rgb(77 120 176 / 0.25);
+  --sombra-chip: 0 6px 16px -6px rgb(77 120 176 / 0.6);
+  --sombra-cartao: 0 8px 20px -10px rgb(77 120 176 / 0.7);
 }
 
 @theme inline {
-  --color-creme: var(--creme);
-  --color-creme-escuro: var(--creme-escuro);
-  --color-papel: var(--papel);
-  --color-tinta: var(--tinta);
-  --color-suave: var(--suave);
-  --color-linha: var(--linha);
-  --color-rosa: var(--rosa);
-  --color-rosa-forte: var(--rosa-forte);
-  --color-rosa-claro: var(--rosa-claro);
-  --color-rosa-bebe: var(--rosa-bebe);
-  --color-salvia: var(--salvia);
-  --color-salvia-claro: var(--salvia-claro);
-  --color-lavanda: var(--lavanda);
-  --color-manteiga: var(--manteiga);
+  --color-fundo: var(--cor-fundo);
+  --color-fundo-escuro: var(--cor-fundo-escuro);
+  --color-superficie: var(--cor-superficie);
+  --color-texto: var(--cor-texto);
+  --color-texto-suave: var(--cor-texto-suave);
+  --color-borda: var(--cor-borda);
+  --color-primaria: var(--cor-primaria);
+  --color-primaria-forte: var(--cor-primaria-forte);
+  --color-primaria-suave: var(--cor-primaria-suave);
+  --color-realce: var(--cor-realce);
+  --color-destaque: var(--cor-destaque);
+  --color-secundaria: var(--cor-secundaria);
+  --color-secundaria-suave: var(--cor-secundaria-suave);
   --font-sans: var(--font-texto), system-ui, sans-serif;
   --font-titulo: var(--font-titulo), Georgia, serif;
   --font-cursiva: var(--font-cursiva), cursive;
-  --shadow-suave: 0 1px 2px rgb(120 90 70 / 0.05), 0 8px 24px -8px rgb(120 90 70 / 0.12);
-  --shadow-elevada: 0 2px 4px rgb(120 90 70 / 0.06), 0 18px 40px -12px rgb(160 90 100 / 0.25);
+  --shadow-suave: var(--sombra-suave);
+  --shadow-elevada: var(--sombra-elevada);
+  --shadow-chip: var(--sombra-chip);
+  --shadow-cartao: var(--sombra-cartao);
 }
 
 body {
-  background: var(--creme);
-  color: var(--tinta);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
 }
 
 ::selection {
-  background: var(--rosa-claro);
+  background: var(--cor-realce);
 }
 
 /* foco visível e consistente para navegação por teclado */
 :focus-visible {
-  outline: 2px solid var(--rosa);
+  outline: 2px solid var(--cor-primaria);
   outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Troca de tema                                                       */
+/* ------------------------------------------------------------------ */
+
+/* conteúdo exclusivo de um modo (o outro fica fora da tela e da leitura) */
+:root[data-tema="roupas"] .so-vestidos,
+:root:not([data-tema="roupas"]) .so-roupas {
+  display: none !important;
+}
+
+/* decorações (flores) trocam com fade */
+.deco-vestidos,
+.deco-roupas {
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease;
+}
+:root[data-tema="roupas"] .deco-vestidos,
+:root:not([data-tema="roupas"]) .deco-roupas {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* durante a troca, as cores mudam suavemente (classe posta via JS por ~450ms;
+   não é aplicada quando a pessoa prefere menos movimento) */
+:root.trocando-tema,
+:root.trocando-tema *,
+:root.trocando-tema *::before,
+:root.trocando-tema *::after {
+  transition-property: color, background-color, border-color, outline-color, fill, stroke, box-shadow !important;
+  transition-duration: 0.4s !important;
+  transition-timing-function: ease !important;
 }
 
 /* ------------------------------------------------------------------ */
@@ -182,7 +255,7 @@ body {
 
 /* brilho passando nos cards de carregamento */
 .brilho {
-  background: linear-gradient(100deg, var(--creme-escuro) 30%, var(--papel) 50%, var(--creme-escuro) 70%);
+  background: linear-gradient(100deg, var(--cor-fundo-escuro) 30%, var(--cor-superficie) 50%, var(--cor-fundo-escuro) 70%);
   background-size: 200% 100%;
   animation: brilho 1.4s ease-in-out infinite;
 }
@@ -210,7 +283,7 @@ dialog.gaveta[open] {
   animation: gaveta-entrar 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 dialog.gaveta::backdrop {
-  background: rgb(63 53 51 / 0.35);
+  background: var(--cor-veu);
   backdrop-filter: blur(2px);
 }
 @keyframes gaveta-entrar {

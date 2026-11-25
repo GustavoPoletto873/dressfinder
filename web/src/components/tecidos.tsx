@@ -408,10 +408,10 @@ export function Escala({ rotulo, valor, min, max }: { rotulo: string; valor: num
       </div>
       <div className="mt-1.5 flex gap-1.5" aria-hidden>
         {[1, 2, 3, 4, 5].map((n) => (
-          <span key={n} className={"h-2 flex-1 rounded-full " + (n <= valor ? "bg-rosa" : "bg-linha")} />
+          <span key={n} className={"h-2 flex-1 rounded-full " + (n <= valor ? "bg-destaque" : "bg-borda")} />
         ))}
       </div>
-      <div className="mt-1 flex justify-between text-[11px] text-suave" aria-hidden>
+      <div className="mt-1 flex justify-between text-[11px] text-texto-suave" aria-hidden>
         <span>{min}</span>
         <span>{max}</span>
       </div>

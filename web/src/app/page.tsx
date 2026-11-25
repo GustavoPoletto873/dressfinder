@@ -28,10 +28,10 @@ export default function PaginaInicial() {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 pt-36 sm:px-6 sm:pt-44 lg:pt-40">
         <header className="surgir mb-10 text-center sm:mb-14" style={{ animationDelay: "0.4s" }}>
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-suave">Sua consultora de vestidos</p>
-          <h1 className="mt-2 font-cursiva text-6xl leading-[1.1] text-rosa sm:text-8xl">Achei o Vestido</h1>
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-texto-suave">Sua consultora de vestidos</p>
+          <h1 className="mt-2 font-cursiva text-6xl leading-[1.1] text-primaria sm:text-8xl">Achei o Vestido</h1>
           <Florzinhas className="mx-auto mt-2 w-36 sm:w-44" />
-          <p className="mx-auto mt-4 max-w-xl font-titulo text-xl italic leading-relaxed text-tinta sm:text-2xl">
+          <p className="mx-auto mt-4 max-w-xl font-titulo text-xl italic leading-relaxed text-texto sm:text-2xl">
             Conte a ocasião e como você imagina o vestido. A gente encontra opções na Shein que combinam com você.
           </p>
         </header>
@@ -39,7 +39,7 @@ export default function PaginaInicial() {
         <Buscador />
       </main>
 
-      <footer className="border-t border-linha/70 px-4 py-8 text-center text-xs text-suave">
+      <footer className="border-t border-borda/70 px-4 py-8 text-center text-xs text-texto-suave">
         <Florzinhas className="mx-auto mb-3 w-24 opacity-80" />
         <p>Feito com carinho. Este app não tem relação com a Shein.</p>
         <p className="mt-1">Preços e disponibilidade podem mudar: confira sempre na loja.</p>

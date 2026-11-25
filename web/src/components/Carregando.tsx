@@ -46,10 +46,10 @@ export function Carregando() {
             <Em x={0} y={0} s={1.6}><Rosa /></Em>
           </g>
         </svg>
-        <p key={indice} className="surgir font-titulo text-2xl italic text-tinta">
+        <p key={indice} className="surgir font-titulo text-2xl italic text-texto">
           {MENSAGENS[indice]}
         </p>
-        <p className="text-sm text-suave">Isso leva alguns segundos.</p>
+        <p className="text-sm text-texto-suave">Isso leva alguns segundos.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" aria-hidden>
