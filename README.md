@@ -21,7 +21,7 @@ formulário
 2. Produtos direto da Shein ────── serviço /scraper (Playwright)
    │  sem produtos? (bloqueio, erro ou scraper desligado)
    ▼
-3. Anúncios encontrados no Google ─ SerpAPI, com "site:br.shein.com <busca>"
+3. Anúncios com foto no Google ── SerpAPI (Google Imagens), com "site:br.shein.com <busca>"
    │  sem resultados, sem cota ou sem chave?
    ▼
 4. Links prontos ────────────────── "Buscar na Shein" e "Buscar no Google" (sempre aparecem)
@@ -71,6 +71,8 @@ O scraper **não tenta contornar** captcha nem bloqueio. Ele detecta a verifica�
 
 Por isso, **a SerpAPI é o que de fato traz anúncios para dentro do app hoje**. O scraper é opcional.
 
+Os anúncios vêm do **Google Imagens** (via SerpAPI). Cada resultado traz a foto do produto, servida pela própria Shein em 750x999, e o link da página dele. Se a foto não carregar, o app usa a miniatura do Google e, só em último caso, um desenho de flor. Essa busca custa o mesmo crédito da busca comum do Google, mas **não traz preço**: o preço aparece na Shein, ao tocar em "Ver na Shein". O filtro de faixa de preço nunca descarta anúncios sem preço.
+
 ## Como rodar localmente
 
 Pré-requisitos: Node.js 22 ou superior.
@@ -112,7 +114,7 @@ O app funciona **sem nenhuma variável configurada**, usando o gerador de buscas
 |---|---|
 | nada | buscas por regras + links da Shein e do Google |
 | `ANTHROPIC_API_KEY` | o Claude gera buscas melhores e explicações sob medida |
-| `SERPAPI_KEY` | anúncios reais encontrados no Google aparecem dentro do app |
+| `SERPAPI_KEY` | anúncios reais da Shein, com foto, encontrados no Google Imagens, aparecem dentro do app |
 | `SCRAPER_URL` + `SCRAPER_TOKEN` | tenta trazer produtos com foto e preço direto da Shein |
 
 #### Gerador de buscas por regras (sem IA)
