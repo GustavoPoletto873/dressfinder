@@ -1,13 +1,18 @@
 "use client";
 
-import { useId, useState, type CSSProperties, type ReactNode } from "react";
+import { useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { OCASIOES_SUGERIDAS, TAMANHOS } from "@/lib/tipos";
-import { IconeFlor, IconeSeta } from "./icones";
+import { IconeCheck, IconeFechar, IconeFlor, IconeInfo, IconeSeta } from "./icones";
+import { CORES_CLARAS, GRUPOS_CORES, MAX_CORES, TODAS_AS_CORES } from "./paletaCores";
+import { AmostraTecido, ESCALAS, Escala, TECIDOS, type Tecido } from "./tecidos";
 
 export interface ValoresFormulario {
   ocasiao: string;
   comprimento: string;
+  /** Cores da paleta escolhidas, separadas por vírgula ("azul, dourado"). */
   cor: string;
+  /** Cor ou estampa digitada livremente. */
+  corOutra: string;
   tecido: string;
   decoteManga: string;
   estilo: string;
@@ -21,6 +26,7 @@ export const VALORES_INICIAIS: ValoresFormulario = {
   ocasiao: "",
   comprimento: "",
   cor: "",
+  corOutra: "",
   tecido: "",
   decoteManga: "",
   estilo: "",
@@ -30,28 +36,19 @@ export const VALORES_INICIAIS: ValoresFormulario = {
   observacoes: "",
 };
 
+/**
+ * Prepara os valores para a API: junta as cores da paleta com a cor digitada
+ * num único campo "cor" ("azul, dourado, verde água").
+ */
+export function paraEnvio(v: ValoresFormulario) {
+  const { corOutra, ...resto } = v;
+  const cores = [...v.cor.split(","), ...corOutra.split(",")].map((t) => t.trim()).filter(Boolean);
+  return { ...resto, cor: [...new Set(cores)].join(", ") };
+}
+
 // ---------------------------------------------------------------------------
 // Opções prontas (menos digitação, principalmente no celular)
 
-const CORES: { nome: string; fundo: string }[] = [
-  { nome: "preto", fundo: "#2b2626" },
-  { nome: "branco", fundo: "#ffffff" },
-  { nome: "off-white", fundo: "#f3eadb" },
-  { nome: "nude", fundo: "#e2c3a6" },
-  { nome: "rosa", fundo: "#f1a9b9" },
-  { nome: "vermelho", fundo: "#c7363f" },
-  { nome: "vinho", fundo: "#7a2336" },
-  { nome: "lilás", fundo: "#c4a7dd" },
-  { nome: "azul", fundo: "#76a3d9" },
-  { nome: "azul marinho", fundo: "#25365c" },
-  { nome: "verde", fundo: "#6f9b6a" },
-  { nome: "verde-oliva", fundo: "#7e7b46" },
-  { nome: "amarelo", fundo: "#f2cf5b" },
-  { nome: "dourado", fundo: "linear-gradient(135deg,#f1d27f,#b58a33)" },
-  { nome: "prata", fundo: "linear-gradient(135deg,#f0f0f0,#a8a8a8)" },
-  { nome: "floral", fundo: "radial-gradient(circle at 30% 30%,#f1a9b9 0 22%,transparent 23%),radial-gradient(circle at 72% 64%,#c4a7dd 0 20%,transparent 21%),radial-gradient(circle at 70% 22%,#a9c0a0 0 14%,transparent 15%),#fff8ef" },
-];
-const TECIDOS = ["cetim", "linho", "renda", "tule", "malha", "crepe", "viscose", "veludo"];
 const ESTILOS = ["romântico", "elegante", "minimalista", "sexy", "boho", "casual", "vintage", "moderno"];
 const DECOTES = ["decote V", "decote coração", "ombro a ombro", "tomara que caia", "frente única", "gola alta"];
 const MANGAS = ["sem manga", "manga curta", "manga longa", "manga bufante"];
@@ -165,6 +162,148 @@ function Silhueta({ comprimento }: { comprimento: "curto" | "midi" | "longo" }) 
   );
 }
 
+/** Bolinha de cor com o nome embaixo. */
+function BolinhaCor({
+  nome,
+  fundo,
+  ativa,
+  bloqueada,
+  onClick,
+}: {
+  nome: string;
+  fundo: string;
+  ativa: boolean;
+  bloqueada: boolean;
+  onClick: () => void;
+}) {
+  const clara = CORES_CLARAS.has(nome);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativa}
+      aria-disabled={bloqueada}
+      title={nome}
+      className={
+        "group flex w-[3.75rem] flex-col items-center gap-1.5 rounded-xl py-1 transition-opacity " +
+        (bloqueada ? "opacity-55" : "")
+      }
+    >
+      <span
+        className={
+          "relative grid size-10 place-items-center rounded-full transition-all duration-200 group-active:scale-90 " +
+          (ativa
+            ? "ring-2 ring-rosa ring-offset-2 ring-offset-papel"
+            : (clara ? "ring-1 ring-black/15 " : "ring-1 ring-black/5 ") + "group-hover:scale-110")
+        }
+        style={{ background: fundo } as CSSProperties}
+      >
+        {ativa && (
+          <span className="grid size-5 place-items-center rounded-full bg-papel/90 text-rosa-forte shadow-sm">
+            <IconeCheck className="size-3.5" strokeWidth={2.6} />
+          </span>
+        )}
+      </span>
+      <span className={"text-center text-[11px] leading-tight " + (ativa ? "font-semibold text-rosa-forte" : "text-tinta")}>
+        {nome}
+      </span>
+    </button>
+  );
+}
+
+/** Cartão de tecido com a amostra da textura. */
+function CartaoTecido({ tecido, ativo, emFoco, onClick }: { tecido: Tecido; ativo: boolean; emFoco: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      title={tecido.resumo}
+      className={
+        "group flex flex-col items-center gap-1.5 rounded-2xl border p-1.5 pb-2 transition-all duration-200 active:scale-95 " +
+        (ativo
+          ? "border-rosa bg-rosa-bebe shadow-[0_8px_20px_-10px_rgb(194_106_122/0.8)]"
+          : emFoco
+            ? "border-rosa/40 bg-papel"
+            : "border-linha bg-papel hover:-translate-y-0.5 hover:border-rosa/40")
+      }
+    >
+      <span className="relative block aspect-square w-full overflow-hidden rounded-xl ring-1 ring-black/5">
+        <AmostraTecido nome={tecido.nome} className="size-full transition-transform duration-500 group-hover:scale-110" />
+        {ativo && (
+          <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-rosa text-white shadow-sm">
+            <IconeCheck className="size-3.5" strokeWidth={2.6} />
+          </span>
+        )}
+      </span>
+      <span className={"text-xs capitalize sm:text-sm " + (ativo ? "font-semibold text-rosa-forte" : "text-tinta")}>{tecido.nome}</span>
+    </button>
+  );
+}
+
+/** Ficha do tecido: como é, para que serve e o que observar. */
+function FichaTecido({ tecido, escolhido, onEscolher }: { tecido: Tecido | null; escolhido: boolean; onEscolher: () => void }) {
+  if (!tecido) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border border-dashed border-linha px-4 py-3.5 text-sm text-suave">
+        <IconeInfo className="size-5 shrink-0 text-rosa" />
+        Não sabe a diferença entre os tecidos? Toque em um para ver como ele é ao toque, o caimento e para que ocasiões combina.
+      </div>
+    );
+  }
+  return (
+    <div key={tecido.nome} className="surgir overflow-hidden rounded-3xl border border-linha bg-papel shadow-suave">
+      <div className="flex gap-4 p-4 sm:p-5">
+        <AmostraTecido nome={tecido.nome} className="size-20 shrink-0 rounded-2xl ring-1 ring-black/5 sm:size-24" />
+        <div className="min-w-0 flex-1">
+          <h3 className="font-titulo text-2xl font-semibold capitalize leading-tight">{tecido.nome}</h3>
+          <p className="font-titulo text-lg italic leading-snug text-suave">{tecido.resumo}</p>
+          <p className="mt-1.5 text-sm leading-relaxed">{tecido.toque}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-linha bg-creme/50 px-4 py-4 sm:px-5">
+        {ESCALAS.map((e) => (
+          <Escala key={e.chave} rotulo={e.rotulo} valor={tecido[e.chave]} min={e.min} max={e.max} />
+        ))}
+      </div>
+
+      <dl className="space-y-2.5 px-4 py-4 text-sm sm:px-5">
+        <div>
+          <dt className="font-medium text-salvia">Combina com</dt>
+          <dd className="leading-relaxed">{tecido.idealPara}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-rosa-forte">Fique de olho</dt>
+          <dd className="leading-relaxed">{tecido.atencao}</dd>
+        </div>
+      </dl>
+
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+        <button
+          type="button"
+          onClick={onEscolher}
+          aria-pressed={escolhido}
+          className={
+            "flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98] " +
+            (escolhido
+              ? "bg-rosa-bebe text-rosa-forte hover:bg-rosa-claro"
+              : "bg-rosa text-white shadow-[0_6px_16px_-6px_rgb(194_106_122/0.7)] hover:bg-rosa-forte")
+          }
+        >
+          {escolhido ? (
+            <>
+              <IconeCheck className="size-4" strokeWidth={2.4} /> {`${tecido.nome[0]!.toUpperCase()}${tecido.nome.slice(1)} escolhido`} · tocar para tirar
+            </>
+          ) : (
+            `Quero ${tecido.nome}`
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 
 interface Props {
@@ -181,6 +320,31 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
   const definir = (campo: keyof ValoresFormulario, valor: string) => aoMudar({ ...valores, [campo]: valor });
   const alternar = (campo: keyof ValoresFormulario, valor: string) =>
     definir(campo, valores[campo].toLowerCase() === valor.toLowerCase() ? "" : valor);
+
+  // --- cores (várias ao mesmo tempo, até MAX_CORES) ---
+  const coresEscolhidas = valores.cor.split(",").map((t) => t.trim()).filter(Boolean);
+  const [avisoLimiteCores, setAvisoLimiteCores] = useState(false);
+  const alternarCor = (nome: string) => {
+    if (!contemNaLista(valores.cor, nome) && coresEscolhidas.length >= MAX_CORES) {
+      setAvisoLimiteCores(true);
+      setTimeout(() => setAvisoLimiteCores(false), 3500);
+      return;
+    }
+    setAvisoLimiteCores(false);
+    definir("cor", alternarNaLista(valores.cor, nome));
+  };
+  const fundoDaCor = (nome: string) => TODAS_AS_CORES.find((c) => c.nome === nome)?.fundo ?? "#eee";
+
+  // --- tecidos: o último tocado aparece na ficha ---
+  const [tecidoEmFoco, setTecidoEmFoco] = useState<string | null>(null);
+  const fichaTecido = useRef<HTMLDivElement>(null);
+  const tecidoDaFicha = TECIDOS.find((t) => t.nome === (tecidoEmFoco ?? valores.tecido.toLowerCase())) ?? null;
+  const tocarTecido = (nome: string) => {
+    alternar("tecido", nome);
+    setTecidoEmFoco(nome);
+    // no celular a ficha fica abaixo da grade: rola só o necessário para ela aparecer
+    requestAnimationFrame(() => fichaTecido.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+  };
 
   const qtdDetalhes = [valores.decoteManga, valores.tamanho, valores.precoMin || valores.precoMax, valores.observacoes].filter(Boolean).length;
   const algoPreenchido = Object.values(valores).some(Boolean);
@@ -245,20 +409,68 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
           </div>
         </Grupo>
 
-        <Grupo rotulo="Cor ou estampa">
-          <div className="flex flex-wrap gap-2">
-            {CORES.map((c) => (
-              <Chip key={c.nome} ativo={valores.cor.toLowerCase() === c.nome} onClick={() => alternar("cor", c.nome)} bolinha={c.fundo}>
-                {c.nome}
-              </Chip>
+        <Grupo rotulo="Cores e estampas">
+          <p className="-mt-1 text-sm text-suave">
+            Escolha até {MAX_CORES}. Buscamos cada uma como opção.
+          </p>
+
+          {/* escolhidas, com atalho para tirar */}
+          {coresEscolhidas.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5" aria-label="Cores escolhidas">
+              {coresEscolhidas.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => alternarCor(c)}
+                  aria-label={`Tirar ${c}`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-rosa-bebe py-1 pl-1.5 pr-2.5 text-sm text-rosa-forte transition hover:bg-rosa-claro active:scale-95"
+                >
+                  <span className="size-4 rounded-full ring-1 ring-black/10" style={{ background: fundoDaCor(c) }} />
+                  {c}
+                  <IconeFechar className="size-3.5" />
+                </button>
+              ))}
+              <span className="ml-1 text-xs text-suave">
+                {coresEscolhidas.length} de {MAX_CORES}
+              </span>
+            </div>
+          )}
+
+          <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            {GRUPOS_CORES.map((g) => (
+              <div key={g.titulo}>
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-suave">{g.titulo}</p>
+                <div className="flex flex-wrap gap-x-0.5 gap-y-2">
+                  {g.cores.map((c) => {
+                    const ativa = contemNaLista(valores.cor, c.nome);
+                    return (
+                      <BolinhaCor
+                        key={c.nome}
+                        nome={c.nome}
+                        fundo={c.fundo}
+                        ativa={ativa}
+                        bloqueada={!ativa && coresEscolhidas.length >= MAX_CORES}
+                        onClick={() => alternarCor(c.nome)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
+
+          {avisoLimiteCores && (
+            <p role="status" className="surgir rounded-xl bg-rosa-bebe px-3.5 py-2 text-sm text-rosa-forte">
+              Você já escolheu {MAX_CORES} cores. Toque em uma delas para tirar e escolher outra.
+            </p>
+          )}
+
           <input
             aria-label="Outra cor ou estampa"
             className={classeCampoPequeno}
             placeholder="ou escreva outra cor ou estampa…"
-            value={CORES.some((c) => c.nome === valores.cor.toLowerCase()) ? "" : valores.cor}
-            onChange={(e) => definir("cor", e.target.value)}
+            value={valores.corOutra}
+            onChange={(e) => definir("corOutra", e.target.value)}
             maxLength={60}
           />
         </Grupo>
@@ -282,19 +494,34 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
         </Grupo>
 
         <Grupo rotulo="Tecido">
-          <div className="flex flex-wrap gap-2">
+          <p className="-mt-1 text-sm text-suave">Toque em um tecido para escolher e ver como ele é.</p>
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
             {TECIDOS.map((t) => (
-              <Chip key={t} ativo={valores.tecido.toLowerCase() === t} onClick={() => alternar("tecido", t)}>
-                {t}
-              </Chip>
+              <CartaoTecido
+                key={t.nome}
+                tecido={t}
+                ativo={valores.tecido.toLowerCase() === t.nome}
+                emFoco={tecidoDaFicha?.nome === t.nome}
+                onClick={() => tocarTecido(t.nome)}
+              />
             ))}
+          </div>
+          <div ref={fichaTecido} className="scroll-mb-24" aria-live="polite">
+            <FichaTecido
+              tecido={tecidoDaFicha}
+              escolhido={!!tecidoDaFicha && valores.tecido.toLowerCase() === tecidoDaFicha.nome}
+              onEscolher={() => tecidoDaFicha && alternar("tecido", tecidoDaFicha.nome)}
+            />
           </div>
           <input
             aria-label="Outro tecido"
             className={classeCampoPequeno}
             placeholder="ou escreva outro tecido…"
-            value={TECIDOS.includes(valores.tecido.toLowerCase()) ? "" : valores.tecido}
-            onChange={(e) => definir("tecido", e.target.value)}
+            value={TECIDOS.some((t) => t.nome === valores.tecido.toLowerCase()) ? "" : valores.tecido}
+            onChange={(e) => {
+              setTecidoEmFoco(null);
+              definir("tecido", e.target.value);
+            }}
             maxLength={60}
           />
         </Grupo>
@@ -433,7 +660,11 @@ export function Formulario({ valores, aoMudar, aoEnviar, carregando, erros }: Pr
       {algoPreenchido && !carregando && (
         <button
           type="button"
-          onClick={() => aoMudar(VALORES_INICIAIS)}
+          onClick={() => {
+            setTecidoEmFoco(null);
+            setAvisoLimiteCores(false);
+            aoMudar(VALORES_INICIAIS);
+          }}
           className="-mt-6 mx-auto block rounded-full px-3 py-1 text-sm text-suave underline-offset-4 transition hover:text-rosa hover:underline"
         >
           Limpar escolhas

@@ -40,7 +40,8 @@ export const esquemaEntrada = z
   .object({
     ocasiao: z.string().trim().min(2, "Conte a ocasião").max(100, "Use no máximo 100 caracteres"),
     comprimento: z.preprocess(vazioParaUndefined, z.enum(COMPRIMENTOS).optional()),
-    cor: textoOpcional(60),
+    // várias cores separadas por vírgula ("azul marinho, dourado, verde água")
+    cor: textoOpcional(160),
     tecido: textoOpcional(60),
     decoteManga: textoOpcional(80),
     estilo: textoOpcional(60),

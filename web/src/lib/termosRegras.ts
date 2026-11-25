@@ -347,8 +347,13 @@ function juntar(...partes: (string | undefined)[]): string {
 }
 
 export function gerarBuscasPorRegras(entrada: Entrada): BuscaSugerida[] {
-  const { cor, tecido, decoteManga, estilo, tamanho, observacoes, ocasiao } = entrada;
+  const { tecido, decoteManga, estilo, tamanho, observacoes, ocasiao } = entrada;
   const comprimento = entrada.comprimento ?? comprimentoDasObservacoes(observacoes);
+  // várias cores são alternativas: cada uma vira uma busca, não um vestido com todas juntas
+  const cores = [...new Set((entrada.cor ?? "").split(",").map((c) => c.trim().toLowerCase()).filter(Boolean))];
+  const cor = cores[0];
+  /** Distribui as cores entre as buscas (com uma cor só, é sempre ela). */
+  const corN = (i: number) => (cores.length ? cores[i % cores.length] : undefined);
   const perfil = perfilDaOcasiao(ocasiao);
   const plus = tamanho === "Plus size" ? "plus size" : undefined;
   const ocasiaoCurta = normalizarTermo(ocasiao).split(" ").slice(0, 3).join(" ");
@@ -371,11 +376,17 @@ export function gerarBuscasPorRegras(entrada: Entrada): BuscaSugerida[] {
       titulo: "Pensado para a ocasião",
       motivo: `Foca no que costuma funcionar bem para ${ocasiao}.`,
     },
+    // as outras cores escolhidas ganham buscas próprias
+    ...cores.slice(1, 4).map((c) => ({
+      termo: juntar(plus, comprimento, c, tecido),
+      titulo: `Em ${c}`,
+      motivo: `Outra cor que você escolheu: ${c}.`,
+    })),
     {
       // estilo traduzido para termos da Shein ("romântico" → "floral babado")
       termo: estiloTraduzido
-        ? juntar(plus, comprimento, estiloTraduzido.termo, cor)
-        : juntar(plus, estilo, cor, comprimento),
+        ? juntar(plus, comprimento, estiloTraduzido.termo, corN(1))
+        : juntar(plus, estilo, corN(1), comprimento),
       titulo: estilo ? `Estilo ${estilo}` : "Na cor escolhida",
       motivo: estiloTraduzido?.motivo ?? "Prioriza o estilo e a cor que você indicou.",
     },
@@ -386,7 +397,7 @@ export function gerarBuscasPorRegras(entrada: Entrada): BuscaSugerida[] {
       motivo: `Leva em conta o que você escreveu: ${listar(detalhesObs)}.`,
     },
     {
-      termo: juntar(plus, detalhesModelo.length ? detalhesModelo.join(" ") : decoteManga, comprimento, cor),
+      termo: juntar(plus, detalhesModelo.length ? detalhesModelo.join(" ") : decoteManga, comprimento, corN(2)),
       titulo: decoteManga ? "Decote e manga do seu jeito" : "Variação de modelo",
       motivo: decoteManga
         ? `Destaca o recorte que você descreveu: ${decoteManga.toLowerCase()}.`
@@ -399,8 +410,8 @@ export function gerarBuscasPorRegras(entrada: Entrada): BuscaSugerida[] {
         ? `Mostra opções em ${tecido.toLowerCase()} que combinam com a ocasião.`
         : "Explora o tecido e o estilo para dar outras opções.",
     },
-    ...perfil.ideias.map(([complemento, titulo, motivo]) => ({
-      termo: juntar(plus, cor, respeitarComprimento(complemento, comprimento)),
+    ...perfil.ideias.map(([complemento, titulo, motivo], i) => ({
+      termo: juntar(plus, corN(i), respeitarComprimento(complemento, comprimento)),
       titulo: respeitarComprimento(titulo, comprimento, true),
       motivo,
     })),
