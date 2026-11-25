@@ -7,7 +7,7 @@
  * com um cartão por loja.
  */
 import { useRef, useState } from "react";
-import { LOJAS, lojaPorId, MAX_LOJAS } from "@/lib/lojas";
+import { GRUPOS_LOJAS, LOJAS, lojaPorId, MAX_LOJAS } from "@/lib/lojas";
 import { CartaoOpcao } from "./campos";
 import { IconeFechar, IconeSacola } from "./icones";
 import { useLojasEscolhidas } from "./lojasEscolhidas";
@@ -56,9 +56,9 @@ export function SeletorLojas() {
           // tocar fora da folha fecha
           if (e.target === e.currentTarget) e.currentTarget.close();
         }}
-        className="folha m-0 mt-auto max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-[2rem] bg-fundo p-0 text-texto shadow-elevada sm:m-auto sm:max-w-2xl sm:rounded-[2rem]"
+        className="folha m-0 mt-auto max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-[2rem] bg-fundo p-0 text-texto shadow-elevada sm:m-auto sm:max-h-[90dvh] sm:max-w-3xl sm:rounded-[2rem]"
       >
-        <div className="space-y-5 p-6 sm:p-8">
+        <div className="space-y-6 px-6 pt-6 sm:px-8 sm:pt-8">
           <header className="flex items-start justify-between gap-4">
             <div>
               <h2 id="titulo-lojas" className="font-cursiva text-4xl leading-none text-primaria">
@@ -78,18 +78,27 @@ export function SeletorLojas() {
             </button>
           </header>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-            {LOJAS.map((l) => (
-              <CartaoOpcao key={l.id} ativo={lojas.includes(l.id)} onClick={() => tocar(l.id)} titulo={l.nome} descricao={l.descricao} />
-            ))}
-          </div>
+          {GRUPOS_LOJAS.map((g) => (
+            <section key={g.id} aria-labelledby={`grupo-lojas-${g.id}`} className="space-y-2.5">
+              <h3 id={`grupo-lojas-${g.id}`} className="text-xs font-medium uppercase tracking-[0.18em] text-texto-suave">
+                {g.titulo}
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {LOJAS.filter((l) => l.grupo === g.id).map((l) => (
+                  <CartaoOpcao key={l.id} ativo={lojas.includes(l.id)} onClick={() => tocar(l.id)} titulo={l.nome} descricao={l.descricao} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
 
+        {/* rodapé preso: aviso e "Pronto" sempre à vista, mesmo rolando a lista */}
+        <div className="sticky bottom-0 space-y-3 bg-linear-to-t from-fundo from-70% to-transparent px-6 pb-6 pt-6 sm:px-8 sm:pb-8">
           {aviso && (
-            <p role="status" className="surgir rounded-2xl bg-primaria-suave px-4 py-3 text-sm text-primaria-forte">
+            <p role="status" className="surgir rounded-2xl bg-primaria-suave px-4 py-3 text-sm text-primaria-forte shadow-suave">
               {aviso}
             </p>
           )}
-
           <button
             type="button"
             onClick={() => folha.current?.close()}
