@@ -5,11 +5,13 @@ import { linkBuscaGoogle, linkBuscaShein } from "@/lib/links";
 import { gerarBuscasPorRegras } from "@/lib/termosRegras";
 import { esquemaEntrada, type RespostaBusca } from "@/lib/tipos";
 import { Carregando } from "./Carregando";
-import { Formulario, VALORES_INICIAIS, type ValoresFormulario } from "./Formulario";
+import { Formulario, VALORES_INICIAIS, paraEnvio, type ValoresFormulario } from "./Formulario";
 import { Resultados } from "./Resultados";
 
+type DadosEnvio = ReturnType<typeof paraEnvio>;
+
 /** Se a API do app falhar, monta links de busca no próprio navegador. */
-function respostaLocal(valores: ValoresFormulario): RespostaBusca | null {
+function respostaLocal(valores: DadosEnvio): RespostaBusca | null {
   const entrada = esquemaEntrada.safeParse(valores);
   if (!entrada.success) return null;
   return {
@@ -29,7 +31,7 @@ function respostaLocal(valores: ValoresFormulario): RespostaBusca | null {
 }
 
 /** Palavras curtas que resumem o pedido, exibidas acima dos resultados. */
-function resumir(v: ValoresFormulario): string[] {
+function resumir(v: DadosEnvio): string[] {
   const preco =
     v.precoMin && v.precoMax
       ? `R$ ${v.precoMin} a ${v.precoMax}`
@@ -38,7 +40,7 @@ function resumir(v: ValoresFormulario): string[] {
         : v.precoMin
           ? `a partir de R$ ${v.precoMin}`
           : "";
-  return [v.ocasiao, v.comprimento, v.cor, v.estilo, v.tecido, ...v.decoteManga.split(","), v.tamanho, preco]
+  return [v.ocasiao, v.comprimento, ...v.cor.split(","), v.estilo, v.tecido, ...v.decoteManga.split(","), v.tamanho, preco]
     .map((t) => t.trim())
     .filter(Boolean);
 }
@@ -56,7 +58,8 @@ export function Buscador() {
     requestAnimationFrame(() => el?.scrollIntoView({ behavior: "smooth", block: "start" }));
 
   async function buscar() {
-    const validacao = esquemaEntrada.safeParse(valores);
+    const envio = paraEnvio(valores);
+    const validacao = esquemaEntrada.safeParse(envio);
     if (!validacao.success) {
       setErros([...new Set(validacao.error.issues.map((i) => i.message))]);
       // leva a usuária direto ao campo que falta
@@ -70,14 +73,14 @@ export function Buscador() {
     setErros([]);
     setCarregando(true);
     setResposta(null);
-    setResumo(resumir(valores));
+    setResumo(resumir(envio));
     rolarPara(areaResultados.current);
 
     try {
       const r = await fetch("/api/buscar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(valores),
+        body: JSON.stringify(envio),
       });
       const dados = await r.json().catch(() => null);
       if (r.status === 400 || r.status === 429) {
@@ -89,7 +92,7 @@ export function Buscador() {
       setResposta(dados as RespostaBusca);
     } catch {
       // a API caiu: ainda assim entregamos buscas prontas montadas aqui mesmo
-      setResposta(respostaLocal(valores));
+      setResposta(respostaLocal(envio));
     } finally {
       setCarregando(false);
     }

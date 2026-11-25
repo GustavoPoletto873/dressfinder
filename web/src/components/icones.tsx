@@ -66,6 +66,19 @@ export const IconeBrilho = (p: P) => (
   </svg>
 );
 
+export const IconeCheck = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </svg>
+);
+
+export const IconeInfo = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5.5M12 7.6v.1" />
+  </svg>
+);
+
 export const IconeLixeira = (p: P) => (
   <svg {...base(p)}>
     <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />

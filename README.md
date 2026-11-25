@@ -89,6 +89,9 @@ Quando não há `ANTHROPIC_API_KEY` (ou a API falha), as buscas são montadas po
 - **Estilo**: traduz para palavras usadas nos títulos da Shein (ex.: romântico → "floral babado", minimalista → "liso básico", sexy → "fenda decote").
 - **Observações**: procura detalhes no texto livre (manga, fenda, decote, costas abertas, babado, renda, "disfarçar a barriga" → "evasê", "usar sutiã" → "alça larga" etc.) e ignora o que vier negado ("não quero fenda").
 - **Comprimento**: o comprimento escolhido sempre prevalece sobre as sugestões da ocasião.
+- **Várias cores** (até 4 na paleta, mais o que for digitado): cada cor é tratada como alternativa e ganha a própria busca ("Em verde esmeralda"), em vez de procurar um vestido com todas as cores juntas.
+
+O guia de tecidos do formulário (textura, caimento, temperatura, elasticidade e para que ocasiões serve) fica em [web/src/components/tecidos.tsx](web/src/components/tecidos.tsx), e a paleta de cores em [web/src/components/paletaCores.ts](web/src/components/paletaCores.ts).
 
 Para incluir novas ocasiões, estilos ou detalhes, basta acrescentar linhas nas listas `PERFIS`, `ESTILOS` e `DETALHES` desse arquivo.
 
