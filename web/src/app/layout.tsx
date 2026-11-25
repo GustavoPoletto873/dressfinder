@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Great_Vibes, Jost } from "next/font/google";
+import { RegistrarSW } from "@/components/comum/RegistrarSW";
 import { SCRIPT_TEMA_INICIAL } from "@/lib/tema";
 import "./globals.css";
 
@@ -25,8 +26,12 @@ const fonteCursiva = Great_Vibes({
 });
 
 export const metadata: Metadata = {
+  // endereço público: as prévias de link (WhatsApp) precisam de URLs completas
+  metadataBase: new URL("https://dressfinder.vercel.app"),
   title: "Achei o Vestido",
   description: "Conte a ocasião e como você imagina o vestido. A gente encontra opções na Shein, Renner, C&A e outras lojas que você escolher.",
+  // instalado na tela inicial do iPhone: abre como app, com este nome
+  appleWebApp: { capable: true, title: "Achei o Vestido", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -44,7 +49,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <RegistrarSW />
+      </body>
     </html>
   );
 }

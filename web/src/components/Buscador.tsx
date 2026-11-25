@@ -10,9 +10,12 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { linkDaLoja, linkGoogle, lojaPorId } from "@/lib/lojas";
+import { sugestoesParaCompletar, type SugestaoLook } from "@/lib/roupas/completeOLook";
 import { gerarBuscasPorRegras } from "@/lib/termosRegras";
 import { esquemaEntrada, type Entrada, type Modo, type RespostaBusca } from "@/lib/tipos";
+import { removerRecente, salvarRecente, useBuscasRecentes, type BuscaRecente } from "./comum/buscasRecentes";
 import { Carregando } from "./comum/Carregando";
+import { IconeFechar, IconeRelogio } from "./comum/icones";
 import { useLojasEscolhidas } from "./comum/lojasEscolhidas";
 import { aoTrocarModo, sincronizarCorDaBarra, useModo } from "./comum/modo";
 import { Resultados } from "./comum/Resultados";
@@ -53,6 +56,40 @@ function respostaLocal(entrada: Entrada): RespostaBusca {
   };
 }
 
+/** Chips das buscas recentes do modo atual: tocar refaz a busca. */
+function BuscasRecentes({ lista, aoUsar }: { lista: BuscaRecente[]; aoUsar: (b: BuscaRecente) => void }) {
+  if (!lista.length) return null;
+  return (
+    <div className="flex items-center gap-2 text-sm sm:justify-center">
+      <span className="flex shrink-0 items-center gap-1 text-texto-suave">
+        <IconeRelogio className="size-4" aria-hidden /> Recentes
+      </span>
+      <ul className="sem-barra -mr-4 flex gap-2 overflow-x-auto pr-4 sm:mr-0 sm:flex-wrap sm:pr-0">
+        {lista.slice(0, 4).map((b) => (
+          <li key={b.id} className="flex shrink-0 items-center rounded-full border border-borda bg-superficie/90 shadow-suave">
+            <button
+              type="button"
+              onClick={() => aoUsar(b)}
+              title={`Refazer: ${b.rotulo}`}
+              className="max-w-[15rem] truncate rounded-l-full py-1.5 pl-3.5 pr-1.5 text-texto transition hover:text-primaria-forte"
+            >
+              {b.rotulo}
+            </button>
+            <button
+              type="button"
+              onClick={() => removerRecente(b.id)}
+              aria-label={`Apagar a busca recente ${b.rotulo}`}
+              className="grid size-7 place-items-center rounded-full text-texto-suave transition hover:bg-primaria-suave hover:text-texto"
+            >
+              <IconeFechar className="size-3.5" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Classes do cartão do formulário (iguais nos dois modos). */
 const CLASSE_CARTAO =
   "mx-auto max-w-3xl scroll-mt-6 rounded-[2.25rem] border border-borda bg-superficie/85 p-5 shadow-suave backdrop-blur-sm sm:p-10";
@@ -66,6 +103,8 @@ export function Buscador() {
   const [carregando, setCarregando] = useState(false);
   const [resposta, setResposta] = useState<RespostaBusca | null>(null);
   const [resumo, setResumo] = useState<string[]>([]);
+  const [completar, setCompletar] = useState<SugestaoLook[]>([]);
+  const recentes = useBuscasRecentes().filter((b) => b.modo === modo);
   const areaResultados = useRef<HTMLDivElement>(null);
   const formVestidos = useRef<HTMLDivElement>(null);
   const formRoupas = useRef<HTMLDivElement>(null);
@@ -83,6 +122,7 @@ export function Buscador() {
       setCarregando(false);
       setResposta(null);
       setResumo([]);
+      setCompletar([]);
     });
   }, []);
 
@@ -91,9 +131,15 @@ export function Buscador() {
 
   const definirErros = (m: Modo, lista: string[]) => setErros((atual) => ({ ...atual, [m]: lista }));
 
-  async function buscar() {
-    const modoDaBusca = modo;
-    const base = modoDaBusca === "roupas" ? paraEnvioRoupas(roupas) : paraEnvioVestidos(vestidos);
+  /**
+   * Faz a busca com os valores do formulário do modo atual ou, ao refazer uma
+   * busca recente, com os valores dela (o estado do formulário ainda não mudou).
+   */
+  async function buscar(forcado?: { modo: Modo; valores: ValoresVestidos | ValoresRoupas }) {
+    const modoDaBusca = forcado?.modo ?? modo;
+    const valoresV = forcado?.modo === "vestidos" ? (forcado.valores as ValoresVestidos) : vestidos;
+    const valoresR = forcado?.modo === "roupas" ? (forcado.valores as ValoresRoupas) : roupas;
+    const base = modoDaBusca === "roupas" ? paraEnvioRoupas(valoresR) : paraEnvioVestidos(valoresV);
     const envio = { ...base, lojas };
     const validacao = esquemaEntrada.safeParse(envio);
     if (!validacao.success) {
@@ -106,7 +152,10 @@ export function Buscador() {
     setCarregando(true);
     setResposta(null);
     const nomesLojas = lojas.map((id) => lojaPorId(id)?.nome).filter(Boolean).join(", ");
-    setResumo([...(envio.modo === "roupas" ? resumoRoupas(envio) : resumoVestidos(envio)), `em ${nomesLojas}`]);
+    const partesResumo = envio.modo === "roupas" ? resumoRoupas(envio) : resumoVestidos(envio);
+    setResumo([...partesResumo, `em ${nomesLojas}`]);
+    salvarRecente(modoDaBusca, modoDaBusca === "roupas" ? valoresR : valoresV, partesResumo);
+    setCompletar(validacao.data.modo === "roupas" ? sugestoesParaCompletar(validacao.data) : []);
     rolarPara(areaResultados.current);
 
     buscaAtual.current?.controle.abort();
@@ -147,6 +196,21 @@ export function Buscador() {
       <div className="space-y-5">
         {/* lojas onde procurar: as mesmas nos dois modos */}
         <SeletorLojas />
+        <BuscasRecentes
+          lista={recentes}
+          aoUsar={(b) => {
+            // completa com os valores iniciais (versões antigas podem não ter algum campo)
+            if (b.modo === "roupas") {
+              const valores = { ...VALORES_INICIAIS_ROUPAS, ...b.valores };
+              setRoupas(valores);
+              buscar({ modo: "roupas", valores });
+            } else {
+              const valores = { ...VALORES_INICIAIS_VESTIDOS, ...b.valores };
+              setVestidos(valores);
+              buscar({ modo: "vestidos", valores });
+            }
+          }}
+        />
         <div ref={formVestidos} className={`so-vestidos ${CLASSE_CARTAO}`}>
           <FormularioVestidos valores={vestidos} aoMudar={setVestidos} aoEnviar={buscar} carregando={carregando} erros={erros.vestidos} />
         </div>
@@ -159,7 +223,7 @@ export function Buscador() {
         {carregando ? (
           <Carregando />
         ) : resposta ? (
-          <Resultados resposta={resposta} resumo={resumo} aoEditar={() => rolarPara(cartaoDo(modo))} />
+          <Resultados resposta={resposta} resumo={resumo} completar={completar} aoEditar={() => rolarPara(cartaoDo(modo))} />
         ) : null}
       </div>
     </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { lojaPorId } from "@/lib/lojas";
+import { linkDaLoja, linkGoogle, lojaPorId } from "@/lib/lojas";
+import type { SugestaoLook } from "@/lib/roupas/completeOLook";
 import type { Anuncio, Produto, RespostaBusca, ResultadoBusca } from "@/lib/tipos";
 import { BotaoCoracao } from "./favoritos";
 import { IconeExterno, IconeFlor, IconeLapis, IconeLupa, IconeSacola, IconeSeta } from "./icones";
@@ -14,7 +15,7 @@ const linkExterno = { target: "_blank", rel: "noopener noreferrer" } as const;
  * Foto do produto. Tenta a foto principal, depois a reserva (miniatura do
  * Google) e, se nenhuma carregar, mostra um placeholder florido.
  */
-function Foto({ src, reserva, alt, className = "" }: { src: string | null; reserva?: string | null; alt: string; className?: string }) {
+export function Foto({ src, reserva, alt, className = "" }: { src: string | null; reserva?: string | null; alt: string; className?: string }) {
   const { FlorSemFoto } = useKitDecoracao();
   const fontes = [src, reserva].filter((f): f is string => Boolean(f));
   const [falhas, setFalhas] = useState(0);
@@ -176,13 +177,16 @@ function BotaoVerMais({ restantes, onClick }: { restantes: number; onClick: () =
   );
 }
 
-function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }) {
+/** Produtos do scraper (com preço) primeiro, depois os anúncios das lojas escolhidas, na mesma vitrine. */
+const itensDaBusca = (busca: ResultadoBusca): ItemVitrine[] => [...busca.produtos, ...busca.anuncios];
+
+function GrupoBusca({ busca, indice, filtroLoja }: { busca: ResultadoBusca; indice: number; filtroLoja: string | null }) {
   const [verTudo, setVerTudo] = useState(false);
-  // produtos do scraper (com preço) primeiro, depois os anúncios das lojas escolhidas, na mesma vitrine
-  const itens: ItemVitrine[] = [...busca.produtos, ...busca.anuncios];
+  const todos = itensDaBusca(busca);
+  const itens = filtroLoja ? todos.filter((i) => i.loja === filtroLoja) : todos;
   const iniciais = busca.produtos.length > 0 ? INICIAIS_COM_PRECO : INICIAIS_SEM_PRECO;
   const visiveis = verTudo ? itens : itens.slice(0, iniciais);
-  const mostrarLoja = busca.links.length > 1;
+  const mostrarLoja = busca.links.length > 1 && !filtroLoja;
   return (
     <section
       id={`grupo-${indice}`}
@@ -211,10 +215,87 @@ function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }
         </>
       )}
 
-      <BotoesBusca busca={busca} destaque={itens.length === 0} />
+      {filtroLoja && itens.length === 0 && todos.length > 0 && (
+        <p className="mb-4 rounded-2xl bg-fundo-escuro/60 px-4 py-3 text-sm text-texto-suave">
+          Nenhuma peça da {lojaPorId(filtroLoja)?.nome ?? "loja"} nesta ideia. Veja na própria loja:
+        </p>
+      )}
+      <BotoesBusca busca={busca} destaque={todos.length === 0} />
       <p className="mt-4 text-xs text-texto-suave">
         Buscamos por <span className="rounded-full bg-primaria-suave px-2 py-0.5 text-texto">{busca.termo}</span>
       </p>
+    </section>
+  );
+}
+
+/** Chips "Todas · Shein · Renner…" para ver as peças de uma loja só. */
+function FiltroLojas({ buscas, filtro, aoMudar }: { buscas: ResultadoBusca[]; filtro: string | null; aoMudar: (loja: string | null) => void }) {
+  const lojas = buscas[0]?.links ?? [];
+  const contagem = new Map<string, number>();
+  for (const b of buscas) for (const i of itensDaBusca(b)) contagem.set(i.loja, (contagem.get(i.loja) ?? 0) + 1);
+  const total = [...contagem.values()].reduce((s, n) => s + n, 0);
+  if (lojas.length < 2 || total === 0) return null;
+  const classe = (ativo: boolean) =>
+    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition active:scale-95 disabled:opacity-45 " +
+    (ativo ? "border-primaria bg-primaria text-white shadow-chip" : "border-borda bg-superficie hover:border-destaque/50 hover:bg-primaria-suave");
+  return (
+    <div role="group" aria-label="Filtrar peças por loja" className="sem-barra -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:justify-center sm:px-0">
+      <button type="button" aria-pressed={!filtro} onClick={() => aoMudar(null)} className={classe(!filtro)}>
+        Todas <span className="text-xs opacity-75">{total}</span>
+      </button>
+      {lojas.map((l) => {
+        const n = contagem.get(l.loja) ?? 0;
+        return (
+          <button key={l.loja} type="button" aria-pressed={filtro === l.loja} disabled={n === 0} onClick={() => aoMudar(filtro === l.loja ? null : l.loja)} className={classe(filtro === l.loja)}>
+            {l.nome} <span className="text-xs opacity-75">{n}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** "Complete o look" (modo Roupas): buscas prontas de peças que combinam, só com links. */
+function CompleteOLook({ sugestoes, lojas }: { sugestoes: SugestaoLook[]; lojas: string[] }) {
+  if (!sugestoes.length || !lojas.length) return null;
+  const linkPrincipal = (termo: string) => (lojas.length === 1 ? linkDaLoja(lojaPorId(lojas[0]!)!, termo).url : linkGoogle(lojas, termo));
+  return (
+    <section aria-labelledby="titulo-look" className="surgir rounded-[2rem] border border-dashed border-destaque/40 bg-primaria-suave/40 p-5 sm:p-7">
+      <header className="mb-4 space-y-1">
+        <h3 id="titulo-look" className="font-cursiva text-4xl leading-none text-primaria">Complete o look</h3>
+        <p className="text-texto-suave">Peças que combinam com o que você procurou. Abrem a busca nas lojas escolhidas.</p>
+      </header>
+      <ul className="grid gap-3 sm:grid-cols-3">
+        {sugestoes.map((s) => (
+          <li key={s.termo} className="flex flex-col rounded-2xl border border-borda bg-superficie p-4 shadow-suave">
+            <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-texto-suave">{s.rotulo}</span>
+            <a
+              href={linkPrincipal(s.termo)}
+              {...linkExterno}
+              className="group mt-1 inline-flex items-center gap-1.5 font-titulo text-xl font-semibold leading-tight hover:text-primaria-forte"
+            >
+              {s.titulo} <IconeExterno className="size-4 opacity-60 transition group-hover:opacity-100" />
+            </a>
+            {lojas.length > 1 && (
+              <p className="mt-2 text-xs text-texto-suave">
+                ou direto na{" "}
+                {lojas.map((id, i) => {
+                  const loja = lojaPorId(id);
+                  if (!loja) return null;
+                  return (
+                    <span key={id}>
+                      {i > 0 && " · "}
+                      <a href={linkDaLoja(loja, s.termo).url} {...linkExterno} className="text-primaria-forte underline-offset-2 hover:underline">
+                        {loja.nome}
+                      </a>
+                    </span>
+                  );
+                })}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -224,11 +305,15 @@ interface Props {
   /** Palavras que resumem o pedido (ocasião, comprimento, cor...). */
   resumo: string[];
   aoEditar: () => void;
+  /** Sugestões de "Complete o look" (só no modo Roupas). */
+  completar?: SugestaoLook[];
 }
 
-export function Resultados({ resposta, resumo, aoEditar }: Props) {
+export function Resultados({ resposta, resumo, aoEditar, completar = [] }: Props) {
   const { totalProdutos, totalAnuncios, buscas } = resposta;
   const { FlorAviso } = useKitDecoracao();
+  const [filtroLoja, setFiltroLoja] = useState<string | null>(null);
+  const lojas = buscas[0]?.links.map((l) => l.loja) ?? [];
   const aviso =
     totalProdutos > 0
       ? null
@@ -285,11 +370,15 @@ export function Resultados({ resposta, resumo, aoEditar }: Props) {
         </nav>
       )}
 
+      <FiltroLojas buscas={buscas} filtro={filtroLoja} aoMudar={setFiltroLoja} />
+
       <div className="space-y-6">
         {buscas.map((b, i) => (
-          <GrupoBusca key={b.termo} busca={b} indice={i} />
+          <GrupoBusca key={b.termo} busca={b} indice={i} filtroLoja={filtroLoja} />
         ))}
       </div>
+
+      <CompleteOLook sugestoes={completar} lojas={lojas} />
     </div>
   );
 }
