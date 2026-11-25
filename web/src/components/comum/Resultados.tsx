@@ -47,10 +47,13 @@ function CardProduto({
   produto,
   indice,
   rotulo = "Ver na Shein",
+  avisarSemPreco = false,
 }: {
   produto: Produto & { imagemReserva?: string | null };
   indice: number;
   rotulo?: string;
+  /** Mostra "ver preço na Shein" no lugar do preço quando ele não vem na busca. */
+  avisarSemPreco?: boolean;
 }) {
   return (
     <article className="surgir group flex flex-col" style={{ animationDelay: `${Math.min(indice, 8) * 60}ms` }}>
@@ -67,10 +70,16 @@ function CardProduto({
           item={{ url: produto.url, titulo: produto.titulo, imagem: produto.imagem, preco: produto.preco }}
           className="absolute right-2.5 top-2.5"
         />
-        {produto.preco && (
+        {produto.preco ? (
           <span className="absolute bottom-2.5 left-2.5 rounded-full bg-superficie/95 px-3 py-1 text-sm font-semibold shadow-suave backdrop-blur">
             {produto.preco}
           </span>
+        ) : (
+          avisarSemPreco && (
+            <span className="pointer-events-none absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-superficie/95 px-2.5 py-1 text-xs font-medium text-primaria-forte shadow-suave backdrop-blur">
+              ver preço na Shein <IconeExterno className="size-3" />
+            </span>
+          )
         )}
       </div>
       <h4 className="mt-3 line-clamp-2 px-1 text-sm leading-snug text-texto">{produto.titulo}</h4>
@@ -92,6 +101,7 @@ function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) 
       produto={anuncio}
       indice={indice}
       rotulo={anuncio.tipo === "produto" ? "Ver na Shein" : "Abrir lista na Shein"}
+      avisarSemPreco={anuncio.tipo === "produto"}
     />
   );
 }

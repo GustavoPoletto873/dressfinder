@@ -3,14 +3,14 @@
 /**
  * Escolhe as flores do modo atual para os componentes compartilhados.
  */
-import type { ComponentType } from "react";
+import type { ComponentType, CSSProperties } from "react";
 import { KIT_ROUPAS } from "../roupas/decoracao";
 import { KIT_VESTIDOS } from "../vestidos/decoracao";
 import { useModo } from "./modo";
 
 export interface KitDecoracao {
   /** Ramo grande dos cantos da página. */
-  RamoCanto: ComponentType<{ className?: string; atrasoBase?: number }>;
+  RamoCanto: ComponentType<{ className?: string; atrasoBase?: number; style?: CSSProperties }>;
   /** Arranjo pequeno de separação (título, rodapé). */
   Enfeite: ComponentType<{ className?: string }>;
   /** Conteúdo do <svg viewBox="-100 -60 200 150"> da tela de carregamento. */

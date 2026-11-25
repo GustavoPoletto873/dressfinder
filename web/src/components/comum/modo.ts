@@ -20,6 +20,13 @@ const COR_BARRA: Record<Modo, string> = { vestidos: "#fdf9f3", roupas: "#f2f7fc"
 const ouvintes = new Set<() => void>();
 let fimTransicao: ReturnType<typeof setTimeout> | undefined;
 
+/**
+ * Quantas vezes cada modo foi "ativado" por uma troca. As flores usam esse
+ * número como chave: quando muda, o conjunto é remontado e a animação de
+ * crescer recomeça.
+ */
+let ativacoes: Record<Modo, number> = { vestidos: 0, roupas: 0 };
+
 function ler(): Modo {
   return document.documentElement.dataset.tema === "roupas" ? "roupas" : "vestidos";
 }
@@ -32,6 +39,15 @@ function assinar(ouvir: () => void) {
 /** Modo atual. No servidor (e na hidratação) é sempre "vestidos". */
 export function useModo(): Modo {
   return useSyncExternalStore(assinar, ler, () => "vestidos");
+}
+
+/** Número de ativações de um modo (muda a cada troca para ele). */
+export function useAtivacoes(modo: Modo): number {
+  return useSyncExternalStore(
+    assinar,
+    () => ativacoes[modo],
+    () => 0,
+  );
 }
 
 /** Escuta trocas de modo (para limpar resultados, cancelar buscas etc.). */
@@ -56,6 +72,7 @@ export function definirModo(modo: Modo) {
   }
 
   html.dataset.tema = modo;
+  ativacoes = { ...ativacoes, [modo]: ativacoes[modo] + 1 };
   sincronizarCorDaBarra();
 
   // reflete na URL (sem recarregar e sem criar entrada no histórico)

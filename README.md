@@ -9,6 +9,10 @@ O app tem **dois modos**, alternados por um switch no topo da página:
 
 Os dois modos têm o mesmo layout, a mesma tipografia e os mesmos componentes: é o mesmo app "em outra estação".
 
+**Experiência guiada, não formulário.** O pedido é montado numa jornada de uma pergunta por vez, com barra de progresso clicável ([web/src/components/comum/Jornada.tsx](web/src/components/comum/Jornada.tsx)). As escolhas aparecem em cartões com ícone e descrição curta, e o texto livre fica atrás de um link discreto ("Não está na lista? Escreva do seu jeito"). O botão "Ver sugestões" aparece assim que o essencial está escolhido (a ocasião, em Vestidos; a peça, em Roupas), sem obrigar a passar por todas as etapas.
+
+**Flores na página inteira.** Além dos cantos, ramos se espalham pelas laterais ao longo de toda a altura da página e nos cantos do rodapé ([web/src/components/comum/Decoracao.tsx](web/src/components/comum/Decoracao.tsx)). A cada troca de modo, o conjunto de flores que entra cresce de novo (caules se desenham e as flores desabrocham).
+
 O app foi pensado para **nunca deixar a pessoa sem resposta**. Cada busca passa por uma cadeia de alternativas:
 
 ```
@@ -71,7 +75,9 @@ O scraper **não tenta contornar** captcha nem bloqueio. Ele detecta a verifica�
 
 Por isso, **a SerpAPI é o que de fato traz anúncios para dentro do app hoje**. O scraper é opcional.
 
-Os anúncios vêm do **Google Imagens** (via SerpAPI). Cada resultado traz a foto do produto, servida pela própria Shein em 750x999, e o link da página dele. Se a foto não carregar, o app usa a miniatura do Google e, só em último caso, um desenho de flor. Essa busca custa o mesmo crédito da busca comum do Google, mas **não traz preço**: o preço aparece na Shein, ao tocar em "Ver na Shein". O filtro de faixa de preço nunca descarta anúncios sem preço.
+Os anúncios vêm do **Google Imagens** (via SerpAPI). Cada resultado traz a foto do produto, servida pela própria Shein em 750x999, e o link da página dele. Se a foto não carregar, o app usa a miniatura do Google e, só em último caso, um desenho de flor. Essa busca custa o mesmo crédito da busca comum do Google, mas **não traz preço**. Nos cartões sem preço aparece o selo "ver preço na Shein", e o preço fica a um toque, na página do produto. O filtro de faixa de preço nunca descarta anúncios sem preço.
+
+Fontes de preço já avaliadas (nov/2026): o **Google Shopping** do Brasil não tem a Shein como loja (0 de 40 resultados); a **busca comum do Google** traz preço em cerca de 30% dos anúncios; consultar a **página da Shein** para ler o preço esbarra na proteção anti-robô do site, que o projeto não contorna.
 
 ## Como rodar localmente
 

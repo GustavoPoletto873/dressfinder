@@ -5,7 +5,7 @@
  * Cada modo passa a sua lista (vestidos e roupas usam tecidos diferentes).
  */
 import { useRef, useState } from "react";
-import { classeCampoPequeno, Grupo } from "./campos";
+import { CampoLivre, Grupo } from "./campos";
 import { IconeCheck, IconeInfo } from "./icones";
 import { AmostraTecido, ESCALAS, Escala, type Tecido } from "./tecidos";
 
@@ -102,7 +102,18 @@ function FichaTecido({ tecido, escolhido, onEscolher }: { tecido: Tecido | null;
   );
 }
 
-export function GuiaTecidos({ tecidos, valor, aoMudar }: { tecidos: Tecido[]; valor: string; aoMudar: (tecido: string) => void }) {
+export function GuiaTecidos({
+  tecidos,
+  valor,
+  aoMudar,
+  semRotulo = false,
+}: {
+  tecidos: Tecido[];
+  valor: string;
+  aoMudar: (tecido: string) => void;
+  /** Quando a pergunta já está no título da etapa, esconde o rótulo e a ajuda. */
+  semRotulo?: boolean;
+}) {
   // o último tecido tocado aparece na ficha
   const [emFoco, setEmFoco] = useState<string | null>(null);
   const ficha = useRef<HTMLDivElement>(null);
@@ -115,9 +126,9 @@ export function GuiaTecidos({ tecidos, valor, aoMudar }: { tecidos: Tecido[]; va
     requestAnimationFrame(() => ficha.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
   };
 
-  return (
-    <Grupo rotulo="Tecido">
-      <p className="-mt-1 text-sm text-texto-suave">Toque em um tecido para escolher e ver como ele é.</p>
+  const conteudo = (
+    <>
+      {!semRotulo && <p className="-mt-1 text-sm text-texto-suave">Toque em um tecido para escolher e ver como ele é.</p>}
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
         {tecidos.map((t) => (
           <CartaoTecido
@@ -136,17 +147,18 @@ export function GuiaTecidos({ tecidos, valor, aoMudar }: { tecidos: Tecido[]; va
           onEscolher={() => tecidoDaFicha && alternar(tecidoDaFicha.nome)}
         />
       </div>
-      <input
-        aria-label="Outro tecido"
-        className={classeCampoPequeno}
-        placeholder="ou escreva outro tecido…"
-        value={tecidos.some((t) => t.nome === valor.toLowerCase()) ? "" : valor}
-        onChange={(e) => {
+      <CampoLivre
+        valor={tecidos.some((t) => t.nome === valor.toLowerCase()) ? "" : valor}
+        aoMudar={(v) => {
           setEmFoco(null);
-          aoMudar(e.target.value);
+          aoMudar(v);
         }}
+        convite="Outro tecido? Escreva aqui"
+        exemplo="Ex.: seda, organza, lã"
+        rotulo="Outro tecido"
         maxLength={60}
       />
-    </Grupo>
+    </>
   );
+  return semRotulo ? <div className="space-y-2.5">{conteudo}</div> : <Grupo rotulo="Tecido">{conteudo}</Grupo>;
 }

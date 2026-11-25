@@ -3,13 +3,14 @@
  * ramos do modo Vestidos, trocando as flores por hortênsias, miosótis,
  * centáureas e delfínios em azul e branco.
  */
+import type { CSSProperties } from "react";
 import { BotaoAzul, CauleFrio, Centaurea, Delfinio, Em, FolhaFria, FrutinhasAzuis, Hortensia, Miosotis } from "./flores";
 
 /** Ramo que nasce no canto superior esquerdo (0,0) e se espalha para dentro. */
-export function RamoCantoRoupas({ className = "", atrasoBase = 0 }: { className?: string; atrasoBase?: number }) {
+export function RamoCantoRoupas({ className = "", atrasoBase = 0, style }: { className?: string; atrasoBase?: number; style?: CSSProperties }) {
   const a = (s: number) => atrasoBase + s;
   return (
-    <svg viewBox="0 0 340 300" className={className} aria-hidden focusable="false">
+    <svg viewBox="0 0 340 300" className={className} style={style} aria-hidden focusable="false">
       <g className="balancar">
         {/* caules principais */}
         <CauleFrio d="M -4 -4 C 40 40, 80 110, 165 160" atrasoS={a(0)} largura={2.6} />

@@ -1,47 +1,13 @@
-import type { ComponentType } from "react";
 import { Buscador } from "@/components/Buscador";
+import { DecoracaoPagina, Enfeite } from "@/components/comum/Decoracao";
 import { Aviso, BotaoFavoritos } from "@/components/comum/favoritos";
 import { SwitchModo } from "@/components/comum/SwitchModo";
-import { FlorzinhasRoupas, RamoCantoRoupas } from "@/components/roupas/Ramos";
-import { Florzinhas, RamoCanto } from "@/components/vestidos/Ramos";
-
-type Ramo = ComponentType<{ className?: string; atrasoBase?: number }>;
-
-/**
- * Os quatro ramos da página (cantos de cima e laterais em telas largas).
- * Cada modo tem o seu conjunto; o CSS faz o fade entre eles (.deco-*).
- */
-function RamosDaPagina({ Ramo, classe }: { Ramo: Ramo; classe: string }) {
-  return (
-    <div className={`pointer-events-none absolute inset-0 -z-10 ${classe}`} aria-hidden>
-      {/* ramos de flores nos cantos superiores (decorativos) */}
-      <Ramo className="pointer-events-none absolute -left-3 -top-3 -z-10 w-48 sm:w-80 lg:w-[26rem]" />
-      <Ramo className="pointer-events-none absolute -right-3 -top-3 -z-10 w-48 -scale-x-100 sm:w-80 lg:w-[26rem]" atrasoBase={0.35} />
-      {/* em telas largas, ramos nas laterais emolduram o formulário */}
-      <Ramo className="pointer-events-none absolute -left-3 top-[30rem] -z-10 hidden w-72 -scale-y-100 xl:block" atrasoBase={0.8} />
-      <Ramo
-        className="pointer-events-none absolute -right-3 top-[46rem] -z-10 hidden w-72 -scale-x-100 -scale-y-100 xl:block"
-        atrasoBase={1}
-      />
-    </div>
-  );
-}
-
-/** Enfeite pequeno de flores; o do outro modo fica por cima, invisível, para o fade. */
-function Enfeite({ classe, classeRoupas }: { classe: string; classeRoupas: string }) {
-  return (
-    <div className="relative">
-      <Florzinhas className={`deco-vestidos ${classe}`} />
-      <FlorzinhasRoupas className={`deco-roupas absolute left-1/2 -translate-x-1/2 ${classeRoupas}`} />
-    </div>
-  );
-}
 
 export default function PaginaInicial() {
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-x-clip">
-      <RamosDaPagina Ramo={RamoCanto} classe="deco-vestidos" />
-      <RamosDaPagina Ramo={RamoCantoRoupas} classe="deco-roupas" />
+      {/* flores da página inteira (um conjunto por modo, com fade e crescendo a cada troca) */}
+      <DecoracaoPagina />
 
       {/* switch Vestidos | Roupas, no topo e centralizado */}
       <div data-regressao-ignorar className="absolute left-1/2 top-3 z-30 -translate-x-1/2 sm:top-5">
@@ -73,7 +39,7 @@ export default function PaginaInicial() {
         <Buscador />
       </main>
 
-      <footer className="border-t border-borda/70 px-4 py-8 text-center text-xs text-texto-suave">
+      <footer className="border-t border-borda/70 px-4 pb-28 pt-8 text-center text-xs text-texto-suave sm:pb-8">
         <Enfeite classe="mx-auto mb-3 w-24 opacity-80" classeRoupas="top-0 w-24 opacity-80" />
         <p>Feito com carinho. Este app não tem relação com a Shein.</p>
         <p className="mt-1">Preços e disponibilidade podem mudar: confira sempre na loja.</p>
