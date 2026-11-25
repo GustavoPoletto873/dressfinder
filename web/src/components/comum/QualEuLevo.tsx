@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { decodificarEscolha, linkWhatsApp, type EscolhaAberta } from "@/lib/compartilhar";
+import { abrirEscolha, linkWhatsApp, type EscolhaAberta } from "@/lib/compartilhar";
 import { lojaPorId } from "@/lib/lojas";
 import { IconeCoracao, IconeExterno, IconeFlor } from "./icones";
 import { Foto } from "./Resultados";
@@ -34,7 +34,7 @@ export function QualEuLevo() {
   useEffect(() => {
     let ativo = true;
     const ler = () =>
-      decodificarEscolha(location.hash).then((escolha) => {
+      abrirEscolha(location.hash).then((escolha) => {
         if (!ativo) return;
         setVoto(null);
         setEstado(escolha ? { tipo: "ok", escolha } : { tipo: "invalido" });
@@ -56,7 +56,9 @@ export function QualEuLevo() {
       <div className="surgir mx-auto max-w-md space-y-5 py-16 text-center">
         <h1 className="font-cursiva text-6xl leading-tight text-primaria">Ops!</h1>
         <p className="font-titulo text-xl italic">Esse link não abriu direito.</p>
-        <p className="text-texto-suave">Peça para quem mandou gerar o link de novo, pela lista de favoritos do app.</p>
+        <p className="text-texto-suave">
+          Ele pode ter expirado (os links duram 90 dias). Peça para quem mandou gerar de novo, pela lista de favoritos do app.
+        </p>
         <Convite />
       </div>
     );

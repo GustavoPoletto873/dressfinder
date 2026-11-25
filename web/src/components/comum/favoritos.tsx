@@ -9,7 +9,7 @@
  * enquanto a página estiver aberta.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { codificarEscolha, linkWhatsApp, MAX_PECAS, MIN_PECAS, pecaDoFavorito } from "@/lib/compartilhar";
+import { gerarLinkEscolha, linkWhatsApp, MAX_PECAS, MIN_PECAS, pecaDoFavorito } from "@/lib/compartilhar";
 import { lojaDoLink, lojaPorId } from "@/lib/lojas";
 import { classeCampo } from "./campos";
 import { IconeCheck, IconeCoracao, IconeExterno, IconeFechar, IconeLixeira } from "./icones";
@@ -188,11 +188,15 @@ export function BotaoFavoritos() {
   useEffect(() => {
     if (!escolhendo || pecasMarcadas.length < MIN_PECAS) return;
     let ativo = true;
-    codificarEscolha(pecasMarcadas, nome).then((hash) => {
-      if (ativo) setLinkGerado({ chave: chaveLink, link: `${location.origin}/qual-eu-levo#${hash}` });
-    });
+    // espera a pessoa parar de digitar o nome antes de pedir o link curto ao servidor
+    const espera = setTimeout(() => {
+      gerarLinkEscolha(location.origin, pecasMarcadas, nome).then((link) => {
+        if (ativo) setLinkGerado({ chave: chaveLink, link });
+      });
+    }, 450);
     return () => {
       ativo = false;
+      clearTimeout(espera);
     };
     // a chave resume as peças e o nome: só recalcula quando eles mudam
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -406,7 +410,7 @@ export function BotaoFavoritos() {
                         disabled
                         className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primaria px-4 text-sm font-semibold text-white opacity-50"
                       >
-                        Mandar no WhatsApp
+                        {podeEnviar ? "Preparando o link…" : "Mandar no WhatsApp"}
                       </button>
                     )}
                     <button

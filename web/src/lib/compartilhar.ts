@@ -82,14 +82,30 @@ async function transformar(bytes: Uint8Array, fluxo: CompressionStream | Decompr
 
 const temCompressao = () => typeof CompressionStream !== "undefined" && typeof DecompressionStream !== "undefined";
 
-/** Monta o trecho depois do "#". */
-export async function codificarEscolha(pecas: PecaCompartilhada[], nome?: string): Promise<string> {
-  const dados = {
-    v: 1,
+/** Formato curto das peças, igual no link longo e no link curto (guardado no servidor). */
+export function montarDados(pecas: PecaCompartilhada[], nome?: string) {
+  return {
+    v: 1 as const,
     ...(nome?.trim() ? { n: nome.trim().slice(0, 30) } : {}),
     p: pecas.slice(0, MAX_PECAS).map((p) => ({ u: p.url, t: p.titulo, i: p.imagem, r: p.preco })),
   };
-  const json = new TextEncoder().encode(JSON.stringify(dados));
+}
+
+/** Confere os dados (venham do link ou do servidor). Null se inválidos ou com loja desconhecida. */
+export function validarEscolha(bruto: unknown): EscolhaAberta | null {
+  const dados = esquemaLink.safeParse(bruto);
+  if (!dados.success) return null;
+  const pecas = dados.data.p
+    .map((p) => pecaDoFavorito({ url: p.u, titulo: p.t, imagem: p.i ?? null, preco: p.r ?? null }))
+    .filter((p): p is PecaCompartilhada => p !== null);
+  // todas as peças precisam ser de lojas conhecidas; senão, a escolha inteira é recusada
+  if (pecas.length !== dados.data.p.length) return null;
+  return { nome: dados.data.n || undefined, pecas };
+}
+
+/** Monta o trecho depois do "#" do link longo (as peças vão dentro do link). */
+export async function codificarEscolha(pecas: PecaCompartilhada[], nome?: string): Promise<string> {
+  const json = new TextEncoder().encode(JSON.stringify(montarDados(pecas, nome)));
   if (temCompressao()) return `d=z.${paraBase64Url(await transformar(json, new CompressionStream("deflate")))}`;
   return `d=j.${paraBase64Url(json)}`;
 }
@@ -112,14 +128,49 @@ export async function decodificarEscolha(hash: string): Promise<EscolhaAberta | 
     } else if (tipo !== "j.") {
       return null;
     }
-    const dados = esquemaLink.safeParse(JSON.parse(new TextDecoder().decode(bytes)));
-    if (!dados.success) return null;
-    const pecas = dados.data.p
-      .map((p) => pecaDoFavorito({ url: p.u, titulo: p.t, imagem: p.i ?? null, preco: p.r ?? null }))
-      .filter((p): p is PecaCompartilhada => p !== null);
-    // todas as peças precisam ser de lojas conhecidas; senão, o link inteiro é recusado
-    if (pecas.length !== dados.data.p.length) return null;
-    return { nome: dados.data.n || undefined, pecas };
+    return validarEscolha(JSON.parse(new TextDecoder().decode(bytes)));
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Link curto: as peças ficam guardadas no servidor e o link leva só um código
+// (/qual-eu-levo#c=<código>). Sem banco configurado, volta para o link longo.
+
+export const FORMATO_CODIGO = /^[A-Za-z0-9_-]{8,16}$/;
+
+/** Depois de um "não configurado", não tenta de novo nesta visita. */
+let curtosIndisponiveis = false;
+
+/** Link para mandar: curto se o servidor guardar as peças; senão, o longo. */
+export async function gerarLinkEscolha(origem: string, pecas: PecaCompartilhada[], nome?: string): Promise<string> {
+  if (!curtosIndisponiveis) {
+    try {
+      const resposta = await fetch("/api/escolhas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(montarDados(pecas, nome)),
+        signal: AbortSignal.timeout(6000),
+      });
+      if (resposta.status === 503) curtosIndisponiveis = true;
+      const dados = resposta.ok ? ((await resposta.json()) as { id?: string }) : null;
+      if (dados?.id && FORMATO_CODIGO.test(dados.id)) return `${origem}/qual-eu-levo#c=${dados.id}`;
+    } catch {
+      // servidor fora do ar ou lento: segue com o link longo
+    }
+  }
+  return `${origem}/qual-eu-levo#${await codificarEscolha(pecas, nome)}`;
+}
+
+/** Abre a escolha do link: código curto (busca no servidor) ou dados no próprio link. */
+export async function abrirEscolha(hash: string): Promise<EscolhaAberta | null> {
+  const codigo = new URLSearchParams(hash.replace(/^#/, "")).get("c");
+  if (!codigo) return decodificarEscolha(hash);
+  if (!FORMATO_CODIGO.test(codigo)) return null;
+  try {
+    const resposta = await fetch(`/api/escolhas?id=${encodeURIComponent(codigo)}`);
+    return resposta.ok ? validarEscolha(await resposta.json()) : null;
   } catch {
     return null;
   }
