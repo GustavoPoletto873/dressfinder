@@ -84,32 +84,33 @@ A pessoa escolhe **até 4 lojas** numa folha "Onde procurar?" logo acima da jorn
 
 O catálogo fica em [web/src/lib/lojas.ts](web/src/lib/lojas.ts). São 19 lojas, escolhidas a partir dos sites de moda feminina mais visitados no Brasil (Semrush e Similarweb, out./nov. de 2026) e mostradas em quatro grupos:
 
-| Grupo | Loja | Busca no Google | Link "Mais na loja" |
-| --- | --- | --- | --- |
-| Gigantes e marketplaces | Shein | `site:br.shein.com` | busca da loja |
-| | Dafiti | `site:dafiti.com.br` | busca da loja |
-| | Zattini | `site:zattini.com.br` | busca da loja (`/busca/termo-em-slug`) |
-| | Zara | `site:zara.com/br` | busca da loja |
-| | H&M | `site:hm.com.br` | busca da loja (VTEX) |
-| Grandes varejistas | Renner | `site:lojasrenner.com.br` | Google filtrado pela loja |
-| | C&A | `site:cea.com.br` | busca da loja (VTEX) |
-| | Riachuelo | `site:riachuelo.com.br` | Google filtrado pela loja |
-| | Marisa | `site:marisa.com.br` | Google filtrado pela loja |
-| | Hering | `site:hering.com.br` | busca da loja (VTEX) |
-| | Lojas Torra | `site:lojastorra.com.br` | busca da loja (VTEX) |
-| | Posthaus | `site:posthaus.com.br` | Google filtrado pela loja |
-| Curadoria e luxo | OQVestir | `site:oqvestir.com.br` | busca da loja (`/busca?busca=`) |
-| | Shop2gether | `site:shop2gether.com.br` | busca da loja (`/busca?busca=`) |
-| | AMARO | `site:amaro.com` | busca da loja (`/search/?q=`) |
-| | Farfetch | `site:farfetch.com/br` | Google filtrado pela loja |
-| Marcas femininas | Farm | `site:farmrio.com.br` | busca da loja (VTEX) |
-| | Animale | `site:animale.com.br` | busca da loja (VTEX) |
-| | Zinzane | `site:zinzane.com.br` | busca da loja (VTEX) |
+| Grupo | Loja | Busca no Google | Link "Mais na loja" | Abre o app da loja |
+| --- | --- | --- | --- | --- |
+| Gigantes e marketplaces | Shein | `site:br.shein.com` | busca da loja | não (a Shein desligou) |
+|  | Dafiti | `site:dafiti.com.br` | busca da loja | iPhone e Android |
+|  | Zattini | `site:zattini.com.br` | busca da loja (`/busca/termo-em-slug`) | Android (iPhone não deu para conferir) |
+|  | Zara | `site:zara.com/br` | busca da loja | iPhone e Android (produtos) |
+|  | H&M | `site:hm.com.br` | busca da loja (VTEX) | não |
+| Grandes varejistas | Renner | `site:lojasrenner.com.br` | busca da loja (`/b?Ntt=`) | iPhone e Android |
+|  | C&A | `site:cea.com.br` | busca da loja (VTEX) | iPhone e Android (produtos) |
+|  | Riachuelo | `site:riachuelo.com.br` | busca da loja (`/busca?q=`) | iPhone e Android |
+|  | Marisa | `site:marisa.com.br` | busca da loja (`/search?text=`) | iPhone e Android |
+|  | Hering | `site:hering.com.br` | busca da loja (VTEX) | iPhone e Android |
+|  | Lojas Torra | `site:lojastorra.com.br` | busca da loja (VTEX) | iPhone e Android |
+|  | Posthaus | `site:posthaus.com.br` | busca da loja (`/busca?palavra=`) | iPhone e Android |
+| Curadoria e luxo | OQVestir | `site:oqvestir.com.br` | busca da loja (`/busca?busca=`) | iPhone e Android |
+|  | Shop2gether | `site:shop2gether.com.br` | busca da loja (`/busca?busca=`) | iPhone e Android |
+|  | AMARO | `site:amaro.com` | busca da loja (`/search/?q=`) | não |
+|  | Farfetch | `site:farfetch.com/br` | Google filtrado pela loja | iPhone e Android (produtos) |
+| Marcas femininas | Farm | `site:farmrio.com.br` | busca da loja (VTEX) | iPhone e Android |
+|  | Animale | `site:animale.com.br` | busca da loja (VTEX) | Android |
+|  | Zinzane | `site:zinzane.com.br` | busca da loja (VTEX) | iPhone (produtos) e Android |
 
 - **Todas as lojas escolhidas vão numa única busca** do Google Imagens por termo (`(site:a OR site:b ...) termo`). Escolher mais lojas **não gasta mais créditos** da SerpAPI.
 - Os resultados são intercalados (uma peça de cada loja, em rodízio), até 12 por busca, para nenhuma loja dominar a lista (a Posthaus, por exemplo, sozinha devolve 31 de 50 resultados). Cada cartão mostra o selo da loja quando há mais de uma escolhida.
 - Nas lojas VTEX, a busca usa `/s?q=termo` (conferido em nov/2026; o formato `/termo?_q=termo&map=ft` dava 404 em várias delas).
-- Renner, Riachuelo, Marisa, Posthaus e Farfetch não têm um endereço de busca simples que pudesse ser conferido, então o link delas abre o Google filtrado pela loja.
+- Só a Farfetch não tem um endereço de busca que pudesse ser conferido (o site recusa acesso automático), então o link dela abre o Google filtrado pela loja. Os formatos de busca de Renner, Riachuelo, Posthaus e Marisa saíram dos próprios sites (formulário ou link de busca da página inicial).
+- **Apps das lojas**: os links são os endereços normais dos sites. Quando a loja declara o app dela (arquivos públicos `/.well-known/apple-app-site-association` no iPhone e `/.well-known/assetlinks.json` no Android) e a pessoa tem o app instalado, o próprio celular abre o app em vez do site. A coluna "Abre o app da loja" mostra o que cada loja declarava em nov/2026. Isso não vale dentro de navegadores embutidos (Instagram, por exemplo) e, no iPhone, a pessoa pode ter escolhido antes "abrir no Safari" para aquela loja.
 - Aparecem pouco no Google Imagens: **Zara**, **Farfetch** (quase só páginas de categoria) e **AMARO** (quase só posts de blog, que o app descarta). As outras trazem fotos normalmente, servidas pelas próprias lojas.
 - A **Privalia** ficou de fora: é um clube fechado, as peças só aparecem depois do cadastro, então nem a busca do Google nem o link funcionariam.
 - O scraper continua existindo só para a Shein.
