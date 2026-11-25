@@ -9,6 +9,7 @@
  * enquanto a página estiver aberta.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { lojaDoLink, lojaPorId } from "@/lib/lojas";
 import { IconeCoracao, IconeExterno, IconeFechar, IconeLixeira } from "./icones";
 import { useKitDecoracao } from "./kitDecoracao";
 
@@ -17,6 +18,19 @@ export interface Favorito {
   titulo: string;
   imagem: string | null;
   preco: string | null;
+  /** Id da loja (favoritos antigos não têm: a loja sai do link). */
+  loja?: string;
+}
+
+/** Nome da loja de um favorito, para o botão "Ver na ...". */
+function nomeDaLoja(f: Favorito): string {
+  const porId = f.loja ? lojaPorId(f.loja) : undefined;
+  if (porId) return porId.nome;
+  try {
+    return lojaDoLink(new URL(f.url))?.nome ?? "loja";
+  } catch {
+    return "loja";
+  }
 }
 
 const CHAVE = "achei-o-vestido:favoritos";
@@ -243,7 +257,7 @@ export function BotaoFavoritos() {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-full bg-primaria px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-primaria-forte"
                       >
-                        Ver na Shein <IconeExterno className="size-3.5" />
+                        Ver na {nomeDaLoja(f)} <IconeExterno className="size-3.5" />
                       </a>
                       <button
                         type="button"

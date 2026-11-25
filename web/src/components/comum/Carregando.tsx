@@ -6,7 +6,7 @@ import { useKitDecoracao } from "./kitDecoracao";
 const MENSAGENS = [
   "Entendendo o que você imaginou…",
   "Escolhendo as melhores buscas…",
-  "Passeando pelas araras da Shein…",
+  "Passeando pelas araras das lojas…",
   "Separando as opções mais bonitas…",
 ];
 

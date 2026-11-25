@@ -52,7 +52,7 @@ export async function buscarNoScraper(
       console.warn(`[scraper] resposta em formato inesperado para "${termo}"`);
       return { status: "erro", produtos: [] };
     }
-    return dados.data;
+    return { status: dados.data.status, produtos: dados.data.produtos.map((p) => ({ ...p, loja: "shein" })) };
   } catch (erro) {
     const motivo = sinal.aborted ? "tempo esgotado" : (erro as Error).message;
     console.warn(`[scraper] falha para "${termo}": ${motivo}`);

@@ -29,10 +29,10 @@ export default function PaginaInicial() {
           </h1>
           <Enfeite classe="mx-auto mt-2 w-36 sm:w-44" classeRoupas="top-2 w-36 sm:w-44" />
           <p className="so-vestidos mx-auto mt-4 max-w-xl font-titulo text-xl italic leading-relaxed text-texto sm:text-2xl">
-            Conte a ocasião e como você imagina o vestido. A gente encontra opções na Shein que combinam com você.
+            Conte a ocasião e como você imagina o vestido. A gente encontra opções nas suas lojas favoritas.
           </p>
           <p className="so-roupas mx-auto mt-4 max-w-xl font-titulo text-xl italic leading-relaxed text-texto sm:text-2xl">
-            Conte qual peça você procura e como imagina. A gente encontra opções na Shein que combinam com você.
+            Conte qual peça você procura e como imagina. A gente encontra opções nas suas lojas favoritas.
           </p>
         </header>
 
@@ -41,7 +41,7 @@ export default function PaginaInicial() {
 
       <footer className="border-t border-borda/70 px-4 pb-28 pt-8 text-center text-xs text-texto-suave sm:pb-8">
         <Enfeite classe="mx-auto mb-3 w-24 opacity-80" classeRoupas="top-0 w-24 opacity-80" />
-        <p>Feito com carinho. Este app não tem relação com a Shein.</p>
+        <p>Feito com carinho. Este app não tem relação com as lojas mostradas.</p>
         <p className="mt-1">Preços e disponibilidade podem mudar: confira sempre na loja.</p>
       </footer>
 

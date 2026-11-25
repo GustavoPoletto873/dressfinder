@@ -1,11 +1,11 @@
 /**
- * Busca anúncios da Shein no Google Imagens pela SerpAPI (https://serpapi.com).
+ * Busca anúncios das lojas escolhidas no Google Imagens pela SerpAPI (https://serpapi.com).
  *
  * É uma API oficial e paga (com cota gratuita), então não sofre captcha.
- * Usamos o Google Imagens com "site:br.shein.com <termo>": cada resultado já
- * vem com a FOTO do produto (servida pela própria Shein, em 750x999) e o
- * link da página dele. Custa o mesmo crédito da busca comum do Google, que
- * quase nunca trazia foto. Em troca, essa busca não traz preço.
+ * Usamos o Google Imagens com "(site:loja1 OR site:loja2 ...) <termo>": numa
+ * ÚNICA busca (1 crédito) vêm produtos de todas as lojas escolhidas, cada um
+ * com a FOTO (servida pela própria loja) e o link da página. Essa busca não
+ * traz preço.
  *
  * O resultado fica em cache por 6 horas para economizar a cota.
  * Observação: na Vercel o cache em memória vale por instância da função,
@@ -13,6 +13,7 @@
  */
 import "server-only";
 import { LRUCache } from "lru-cache";
+import { filtroDeSites, lojaDoLink } from "./lojas";
 import type { Anuncio, StatusAnuncios } from "./tipos";
 
 const SEIS_HORAS = 6 * 60 * 60 * 1000;
@@ -37,17 +38,21 @@ export function maxTermosSerpApi(): number {
   return Number.isFinite(valor) && valor >= 0 ? Math.floor(valor) : 3;
 }
 
-export async function buscarAnunciosNoGoogle(termo: string): Promise<ResultadoAnuncios> {
+/**
+ * @param lojas ids das lojas escolhidas (ver lib/lojas.ts)
+ * @param excluir descarta resultados cujo título/link combine (ex.: /masculin/ para público feminino)
+ */
+export async function buscarAnunciosNoGoogle(termo: string, lojas: string[], excluir?: RegExp): Promise<ResultadoAnuncios> {
   const chave = process.env.SERPAPI_KEY;
   if (!chave) return { status: "desativado", anuncios: [] };
 
-  const chaveCache = `imagens:${termo.trim().toLowerCase()}`;
+  const chaveCache = `imagens:${[...lojas].sort().join(",")}:${excluir?.source ?? ""}:${termo.trim().toLowerCase()}`;
   const emCache = cache.get(chaveCache);
   if (emCache) return emCache;
 
   const parametros = new URLSearchParams({
     engine: "google_images",
-    q: `site:br.shein.com ${termo}`,
+    q: `${filtroDeSites(lojas)} ${termo}`,
     google_domain: "google.com.br",
     gl: "br",
     hl: "pt-br",
@@ -71,11 +76,12 @@ export async function buscarAnunciosNoGoogle(termo: string): Promise<ResultadoAn
       return { status: "erro", anuncios: [] };
     }
 
-    const anuncios = converterResultados(dados.images_results ?? dados.image_results ?? []);
+    const anuncios = converterResultados(dados.images_results ?? dados.image_results ?? [], lojas, excluir);
     const resultado: ResultadoAnuncios = { status: anuncios.length ? "ok" : "vazio", anuncios };
     cache.set(chaveCache, resultado);
+    const porLoja = anuncios.reduce<Record<string, number>>((m, a) => ((m[a.loja] = (m[a.loja] ?? 0) + 1), m), {});
     console.info(
-      `[serpapi] termo="${termo}" status=${resultado.status} anuncios=${anuncios.length} tempo=${((Date.now() - inicio) / 1000).toFixed(1)}s`,
+      `[serpapi] termo="${termo}" lojas=${lojas.join(",")} status=${resultado.status} anuncios=${anuncios.length} ${JSON.stringify(porLoja)} tempo=${((Date.now() - inicio) / 1000).toFixed(1)}s`,
     );
     return resultado;
   } catch (erro) {
@@ -111,10 +117,16 @@ function converterPreco(texto: string): number | null {
   return Number.isFinite(numero) && numero > 0 ? numero : null;
 }
 
+/** Nomes de loja que aparecem como "assinatura" nos títulos ("... | Marisa", "Riachuelo | ..."). */
+const ASSINATURA_LOJA = /^(shein( brasil)?|lojas renner|renner|c&a|cea|riachuelo|dafiti|farm( rio)?|hering|lojas torra|torra|marisa|zara( brasil)?)$/i;
+
 function limparTitulo(titulo: string): string {
-  let limpo = titulo
-    .replace(/\s+/g, " ")
-    .replace(/\s*[|\-–]\s*SHEIN.*$/i, "") // "... | SHEIN Brasil"
+  // "Riachuelo | Vestido midi godê - Verde | Pool" → fica o pedaço mais longo que não é o nome da loja
+  const partes = titulo.replace(/\s+/g, " ").split(/\s\|\s/).map((p) => p.trim()).filter((p) => p && !ASSINATURA_LOJA.test(p));
+  const principal = partes.sort((a, b) => b.length - a.length)[0] ?? titulo;
+  let limpo = principal
+    .replace(/\s+[-–]\s+([^-–]+)$/, (trecho, fim: string) => (ASSINATURA_LOJA.test(fim.trim()) ? "" : trecho)) // "... - Marisa"
+    .replace(/\s*[|\-–]\s*SHEIN.*$/i, "") // "... - SHEIN Brasil"
     .replace(/\s*[-–]\s*(Product Video|V[íi]deo( do produto)?)\s*$/i, "") // "... - Product Video"
     .replace(/^SHEIN\s+/i, "") // "SHEIN Vestido..."
     .trim();
@@ -129,7 +141,9 @@ function limparTitulo(titulo: string): string {
       .replace(/[\s,;:]+$/, "")
       .replace(/[\s,]+(e|com|de|da|do|sem|para|em|no|na|a|o)$/i, ""); // conectivo solto no fim
   }
-  return limpo.trim() || titulo;
+  limpo = limpo.trim() || titulo;
+  // algumas lojas (ex.: C&A) mandam o título todo em minúsculas
+  return limpo.charAt(0).toLocaleUpperCase("pt-BR") + limpo.slice(1);
 }
 
 /** Roupas infantis aparecem na busca do Google; o app é para mulheres adultas. */
@@ -154,8 +168,14 @@ function urlHttps(valor: string | undefined): string | null {
   }
 }
 
-function converterResultados(itens: ResultadoImagem[]): Anuncio[] {
-  const anuncios: Anuncio[] = [];
+/**
+ * Converte os resultados do Google Imagens em anúncios.
+ * - só aceita links das lojas escolhidas;
+ * - descarta roupa infantil e, se pedido, o que não for do público (ex.: masculino);
+ * - intercala as lojas (uma de cada vez) para nenhuma dominar a lista.
+ */
+function converterResultados(itens: ResultadoImagem[], lojas: string[], excluir?: RegExp): Anuncio[] {
+  const porLoja = new Map<string, Anuncio[]>(lojas.map((id) => [id, []]));
   const vistos = new Set<string>();
   for (const item of itens) {
     if (!item.link || !item.title) continue;
@@ -165,35 +185,48 @@ function converterResultados(itens: ResultadoImagem[]): Anuncio[] {
     } catch {
       continue;
     }
-    if (!url.hostname.endsWith("shein.com")) continue;
-    if (INFANTIL.test(decodificar(url.pathname)) || INFANTIL.test(item.title)) continue;
-    url.hostname = "br.shein.com";
+    const loja = lojaDoLink(url);
+    if (!loja || !porLoja.has(loja.id)) continue;
+    const textoBusca = `${decodificar(url.pathname)} ${item.title}`;
+    if (INFANTIL.test(textoBusca) || (excluir && excluir.test(textoBusca))) continue;
     url.protocol = "https:";
-    url.search = "";
-    if (vistos.has(url.pathname)) continue;
+    url.hostname = loja.id === "shein" ? "br.shein.com" : url.hostname.replace(/^m\./, "www.");
+    url.search = ""; // tira parâmetros de rastreio (ex.: srsltid do Google)
+    if (vistos.has(url.hostname + url.pathname)) continue;
 
-    // foto principal: a da Shein; reserva: a miniatura do Google
+    // foto principal: a da loja; reserva: a miniatura do Google
     const original = urlHttps(item.original);
     const miniatura = urlHttps(item.thumbnail);
     const imagem = original ?? miniatura;
     if (!imagem) continue; // a ideia aqui é sempre ter foto
-    vistos.add(url.pathname);
+    vistos.add(url.hostname + url.pathname);
 
     const preco = item.title.match(REGEX_PRECO)?.[0] ?? null;
-    anuncios.push({
+    porLoja.get(loja.id)!.push({
+      loja: loja.id,
       titulo: limparTitulo(item.title),
       url: url.toString(),
       imagem,
       imagemReserva: miniatura && miniatura !== imagem ? miniatura : null,
       trecho: null,
-      tipo: /-p-\d+/.test(url.pathname) ? "produto" : "pagina",
+      tipo: loja.produto.test(url.pathname) ? "produto" : "pagina",
       preco,
       precoNumero: preco ? converterPreco(preco) : null,
     });
   }
-  // páginas de produto primeiro
-  anuncios.sort((a, b) => Number(b.tipo === "produto") - Number(a.tipo === "produto"));
-  return anuncios.slice(0, MAX_ANUNCIOS);
+
+  // em cada loja, páginas de produto primeiro; depois uma de cada loja, em rodízio
+  const filas = [...porLoja.values()].map((lista) =>
+    lista.sort((a, b) => Number(b.tipo === "produto") - Number(a.tipo === "produto")),
+  );
+  const anuncios: Anuncio[] = [];
+  while (anuncios.length < MAX_ANUNCIOS && filas.some((f) => f.length)) {
+    for (const fila of filas) {
+      const proximo = fila.shift();
+      if (proximo && anuncios.length < MAX_ANUNCIOS) anuncios.push(proximo);
+    }
+  }
+  return anuncios;
 }
 
 /** Exportados só para testes locais. */

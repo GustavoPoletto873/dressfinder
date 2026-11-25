@@ -3,6 +3,7 @@
  * Este arquivo não pode importar nada exclusivo do servidor.
  */
 import { z } from "zod";
+import { MAX_LOJAS, normalizarLojas } from "./lojas";
 import { NUMERACOES, PUBLICOS, TIPOS_PECA } from "./roupas/opcoes";
 
 export type Modo = "vestidos" | "roupas";
@@ -39,6 +40,9 @@ const precoOpcional = z.preprocess(
   z.coerce.number({ error: "Preço inválido" }).min(0, "Preço não pode ser negativo").max(100_000).optional(),
 );
 
+/** Lojas escolhidas (ids). Lista vazia, inválida ou ausente vira a loja padrão (Shein). */
+const lojas = z.preprocess(normalizarLojas, z.array(z.string()).min(1).max(MAX_LOJAS));
+
 const faixaValida = (d: { precoMin?: number; precoMax?: number }) =>
   d.precoMin === undefined || d.precoMax === undefined || d.precoMin <= d.precoMax;
 const ERRO_FAIXA = { message: "O preço mínimo precisa ser menor que o máximo", path: ["precoMax"] };
@@ -47,6 +51,7 @@ const ERRO_FAIXA = { message: "O preço mínimo precisa ser menor que o máximo"
 export const esquemaVestidos = z
   .object({
     modo: z.literal("vestidos"),
+    lojas,
     ocasiao: z.string().trim().min(2, "Conte a ocasião").max(100, "Use no máximo 100 caracteres"),
     comprimento: z.preprocess(vazioParaUndefined, z.enum(COMPRIMENTOS).optional()),
     // várias cores separadas por vírgula ("azul marinho, dourado, verde água")
@@ -65,6 +70,7 @@ export const esquemaVestidos = z
 export const esquemaRoupas = z
   .object({
     modo: z.literal("roupas"),
+    lojas,
     tipoPeca: z.preprocess(vazioParaUndefined, z.enum(TIPOS_PECA, { error: "Escolha o tipo de peça" })),
     /** Usado quando tipoPeca é "outra". */
     tipoOutro: textoOpcional(40),
@@ -108,6 +114,8 @@ export interface BuscaSugerida {
 }
 
 export interface Produto {
+  /** Id da loja (ver lib/lojas.ts). */
+  loja: string;
   titulo: string;
   preco: string | null;
   precoNumero: number | null;
@@ -117,27 +125,39 @@ export interface Produto {
 
 /** Resultado encontrado via Google (SerpAPI). */
 export interface Anuncio {
+  /** Id da loja (ver lib/lojas.ts). */
+  loja: string;
   titulo: string;
   url: string;
-  /** Foto principal (servida pela Shein). */
+  /** Foto principal (servida pela própria loja). */
   imagem: string | null;
   /** Foto reserva (miniatura do Google), usada se a principal não carregar. */
   imagemReserva?: string | null;
   preco: string | null;
   precoNumero: number | null;
   trecho: string | null;
-  /** "produto" = página de um vestido; "pagina" = categoria/lista da Shein. */
+  /** "produto" = página de uma peça; "pagina" = categoria/lista da loja. */
   tipo: "produto" | "pagina";
 }
 
-/** Status do scraper da Shein. "desativado" = SCRAPER_URL não configurada. */
+/** Status do scraper da Shein. "desativado" = SCRAPER_URL não configurada ou Shein não escolhida. */
 export type StatusScraper = "ok" | "vazio" | "bloqueado" | "erro" | "desativado";
 
 /** Status da busca no Google. "pulado" = não foi necessária ou passou do limite por pesquisa. */
 export type StatusAnuncios = "ok" | "vazio" | "cota" | "erro" | "desativado" | "pulado";
 
+/** Link "buscar na loja" (a busca da própria loja ou o Google filtrado por ela). */
+export interface LinkLoja {
+  loja: string;
+  nome: string;
+  url: string;
+  viaGoogle: boolean;
+}
+
 export interface ResultadoBusca extends BuscaSugerida {
-  linkShein: string;
+  /** Um link por loja escolhida. */
+  links: LinkLoja[];
+  /** Google filtrado por todas as lojas escolhidas. */
   linkGoogle: string;
   status: StatusScraper;
   produtos: Produto[];

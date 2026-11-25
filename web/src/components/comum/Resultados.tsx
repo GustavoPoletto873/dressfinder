@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { lojaPorId } from "@/lib/lojas";
 import type { Anuncio, Produto, RespostaBusca, ResultadoBusca } from "@/lib/tipos";
 import { BotaoCoracao } from "./favoritos";
 import { IconeExterno, IconeFlor, IconeLapis, IconeLupa, IconeSacola, IconeSeta } from "./icones";
@@ -28,7 +29,7 @@ function Foto({ src, reserva, alt, className = "" }: { src: string | null; reser
     );
   }
   return (
-    // imagens vêm de vários domínios (Shein/Google); <img> simples evita configurar domínios no next/image
+    // imagens vêm de vários domínios (lojas/Google); <img> simples evita configurar domínios no next/image
     // eslint-disable-next-line @next/next/no-img-element
     <img
       key={atual}
@@ -42,19 +43,13 @@ function Foto({ src, reserva, alt, className = "" }: { src: string | null; reser
   );
 }
 
-/** Cartão de vitrine (foto grande, preço, coração e "Ver na Shein"). Serve para produtos e anúncios. */
-function CardProduto({
-  produto,
-  indice,
-  rotulo = "Ver na Shein",
-  avisarSemPreco = false,
-}: {
-  produto: Produto & { imagemReserva?: string | null };
-  indice: number;
-  rotulo?: string;
-  /** Mostra "ver preço na Shein" no lugar do preço quando ele não vem na busca. */
-  avisarSemPreco?: boolean;
-}) {
+/** Item da vitrine: produto do scraper ou anúncio encontrado no Google. */
+type ItemVitrine = Produto & Partial<Pick<Anuncio, "imagemReserva" | "tipo">>;
+
+/** Cartão de vitrine (foto grande, loja, preço, coração e "Ver na loja"). Serve para produtos e anúncios. */
+function CardProduto({ produto, indice, mostrarLoja }: { produto: ItemVitrine; indice: number; mostrarLoja: boolean }) {
+  const nomeLoja = lojaPorId(produto.loja)?.nome ?? "loja";
+  const ehLista = produto.tipo === "pagina";
   return (
     <article className="surgir group flex flex-col" style={{ animationDelay: `${Math.min(indice, 8) * 60}ms` }}>
       <div className="relative overflow-hidden rounded-3xl bg-fundo-escuro shadow-suave transition-shadow duration-300 group-hover:shadow-elevada">
@@ -66,8 +61,13 @@ function CardProduto({
             className="aspect-[3/4] w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]"
           />
         </a>
+        {mostrarLoja && (
+          <span className="pointer-events-none absolute left-2.5 top-2.5 max-w-[calc(100%-4.5rem)] truncate rounded-full bg-superficie/95 px-2.5 py-1 text-[11px] font-semibold text-texto shadow-suave backdrop-blur">
+            {nomeLoja}
+          </span>
+        )}
         <BotaoCoracao
-          item={{ url: produto.url, titulo: produto.titulo, imagem: produto.imagem, preco: produto.preco }}
+          item={{ url: produto.url, titulo: produto.titulo, imagem: produto.imagem, preco: produto.preco, loja: produto.loja }}
           className="absolute right-2.5 top-2.5"
         />
         {produto.preco ? (
@@ -75,9 +75,9 @@ function CardProduto({
             {produto.preco}
           </span>
         ) : (
-          avisarSemPreco && (
+          !ehLista && (
             <span className="pointer-events-none absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-superficie/95 px-2.5 py-1 text-xs font-medium text-primaria-forte shadow-suave backdrop-blur">
-              ver preço na Shein <IconeExterno className="size-3" />
+              ver preço na loja <IconeExterno className="size-3" />
             </span>
           )
         )}
@@ -86,48 +86,46 @@ function CardProduto({
       <a
         href={produto.url}
         {...linkExterno}
-        className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-destaque/40 px-4 py-2 text-sm font-medium text-primaria-forte transition-all duration-200 hover:border-primaria hover:bg-primaria hover:text-white active:scale-95"
+        className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-destaque/40 px-3 py-2 text-sm font-medium text-primaria-forte transition-all duration-200 hover:border-primaria hover:bg-primaria hover:text-white active:scale-95"
       >
-        {rotulo} <IconeExterno className="size-3.5" />
+        <span className="truncate">{ehLista ? `Abrir lista na ${nomeLoja}` : `Ver na ${nomeLoja}`}</span>
+        <IconeExterno className="size-3.5 shrink-0" />
       </a>
     </article>
   );
 }
 
-/** Anúncio encontrado no Google: mesmo cartão de vitrine, com foto. */
-function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) {
-  return (
-    <CardProduto
-      produto={anuncio}
-      indice={indice}
-      rotulo={anuncio.tipo === "produto" ? "Ver na Shein" : "Abrir lista na Shein"}
-      avisarSemPreco={anuncio.tipo === "produto"}
-    />
-  );
-}
-
-/** Botões de busca pronta. Em destaque quando são o único conteúdo do grupo. */
+/** Botões de busca pronta, um por loja. Em destaque quando são o único conteúdo do grupo. */
 function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boolean }) {
   const modo = useModo();
+  const subtituloGoogle =
+    busca.links.length > 1 ? "Só resultados das lojas escolhidas" : `Só resultados da ${busca.links[0]?.nome ?? "loja"}`;
   if (destaque) {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
-        <a
-          href={busca.linkShein}
-          {...linkExterno}
-          className="group flex items-center gap-3 rounded-2xl bg-primaria px-5 py-4 text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-primaria-forte active:scale-[0.98]"
-        >
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/20">
-            <IconeSacola className="size-5" />
-          </span>
-          <span className="flex-1">
-            <span className="block font-medium">Ver esta busca na Shein</span>
-            <span className="block text-sm text-white/80">
-              {modo === "roupas" ? "Abre a lista de peças" : "Abre a lista de vestidos"}
+        {busca.links.map((l) => (
+          <a
+            key={l.loja}
+            href={l.url}
+            {...linkExterno}
+            className="group flex items-center gap-3 rounded-2xl bg-primaria px-5 py-4 text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-primaria-forte active:scale-[0.98]"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/20">
+              <IconeSacola className="size-5" />
             </span>
-          </span>
-          <IconeExterno className="size-4 opacity-70 transition group-hover:opacity-100" />
-        </a>
+            <span className="flex-1">
+              <span className="block font-medium">Ver esta busca na {l.nome}</span>
+              <span className="block text-sm text-white/80">
+                {l.viaGoogle
+                  ? "Abre o Google só com peças da loja"
+                  : modo === "roupas"
+                    ? "Abre a lista de peças"
+                    : "Abre a lista de vestidos"}
+              </span>
+            </span>
+            <IconeExterno className="size-4 opacity-70 transition group-hover:opacity-100" />
+          </a>
+        ))}
         <a
           href={busca.linkGoogle}
           {...linkExterno}
@@ -138,7 +136,7 @@ function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boo
           </span>
           <span className="flex-1">
             <span className="block font-medium">Procurar no Google</span>
-            <span className="block text-sm text-texto-suave">Só resultados da Shein</span>
+            <span className="block text-sm text-texto-suave">{subtituloGoogle}</span>
           </span>
           <IconeExterno className="size-4 text-texto-suave opacity-70 transition group-hover:opacity-100" />
         </a>
@@ -149,9 +147,11 @@ function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boo
     "inline-flex items-center gap-2 rounded-full border border-borda bg-superficie px-4 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-destaque/40 hover:text-primaria-forte active:scale-95";
   return (
     <div className="flex flex-wrap gap-2">
-      <a href={busca.linkShein} {...linkExterno} className={classe}>
-        <IconeSacola className="size-4" /> Mais na Shein
-      </a>
+      {busca.links.map((l) => (
+        <a key={l.loja} href={l.url} {...linkExterno} className={classe}>
+          <IconeSacola className="size-4" /> Mais na {l.nome}
+        </a>
+      ))}
       <a href={busca.linkGoogle} {...linkExterno} className={classe}>
         <IconeLupa className="size-4" /> Procurar no Google
       </a>
@@ -160,8 +160,8 @@ function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boo
 }
 
 /** Quantos itens mostrar antes do "Ver mais" (evita rolagem enorme no celular). */
-const INICIAL_PRODUTOS = 8;
-const INICIAL_ANUNCIOS = 4;
+const INICIAIS_COM_PRECO = 8;
+const INICIAIS_SEM_PRECO = 4;
 
 function BotaoVerMais({ restantes, onClick }: { restantes: number; onClick: () => void }) {
   return (
@@ -178,10 +178,11 @@ function BotaoVerMais({ restantes, onClick }: { restantes: number; onClick: () =
 
 function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }) {
   const [verTudo, setVerTudo] = useState(false);
-  const temProdutos = busca.produtos.length > 0;
-  const temAnuncios = busca.anuncios.length > 0;
-  const produtos = verTudo ? busca.produtos : busca.produtos.slice(0, INICIAL_PRODUTOS);
-  const anuncios = verTudo ? busca.anuncios : busca.anuncios.slice(0, INICIAL_ANUNCIOS);
+  // produtos do scraper (com preço) primeiro, depois os anúncios das lojas escolhidas, na mesma vitrine
+  const itens: ItemVitrine[] = [...busca.produtos, ...busca.anuncios];
+  const iniciais = busca.produtos.length > 0 ? INICIAIS_COM_PRECO : INICIAIS_SEM_PRECO;
+  const visiveis = verTudo ? itens : itens.slice(0, iniciais);
+  const mostrarLoja = busca.links.length > 1;
   return (
     <section
       id={`grupo-${indice}`}
@@ -197,32 +198,20 @@ function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }
         <p className="max-w-2xl text-texto-suave">{busca.motivo}</p>
       </header>
 
-      {temProdutos && (
+      {itens.length > 0 && (
         <>
           <div className="mb-6 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
-            {produtos.map((p, i) => (
-              <CardProduto key={p.url} produto={p} indice={i} />
+            {visiveis.map((item, i) => (
+              <CardProduto key={item.url} produto={item} indice={i} mostrarLoja={mostrarLoja} />
             ))}
           </div>
-          {!verTudo && busca.produtos.length > INICIAL_PRODUTOS && (
-            <BotaoVerMais restantes={busca.produtos.length - INICIAL_PRODUTOS} onClick={() => setVerTudo(true)} />
-          )}
-        </>
-      )}
-      {!temProdutos && temAnuncios && (
-        <>
-          <div className="mb-6 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
-            {anuncios.map((a, i) => (
-              <CardAnuncio key={a.url} anuncio={a} indice={i} />
-            ))}
-          </div>
-          {!verTudo && busca.anuncios.length > INICIAL_ANUNCIOS && (
-            <BotaoVerMais restantes={busca.anuncios.length - INICIAL_ANUNCIOS} onClick={() => setVerTudo(true)} />
+          {!verTudo && itens.length > iniciais && (
+            <BotaoVerMais restantes={itens.length - iniciais} onClick={() => setVerTudo(true)} />
           )}
         </>
       )}
 
-      <BotoesBusca busca={busca} destaque={!temProdutos && !temAnuncios} />
+      <BotoesBusca busca={busca} destaque={itens.length === 0} />
       <p className="mt-4 text-xs text-texto-suave">
         Buscamos por <span className="rounded-full bg-primaria-suave px-2 py-0.5 text-texto">{busca.termo}</span>
       </p>
@@ -244,8 +233,8 @@ export function Resultados({ resposta, resumo, aoEditar }: Props) {
     totalProdutos > 0
       ? null
       : totalAnuncios > 0
-        ? "A Shein não deixou a gente mostrar os produtos aqui agora, então trouxemos anúncios encontrados no Google e buscas prontas."
-        : "A Shein não deixou a gente mostrar os produtos aqui agora, então preparamos buscas prontas. É só tocar para abrir.";
+        ? "Estas peças foram encontradas no Google, sem o preço. Toque em uma para ver preço e tamanhos na loja."
+        : "Não conseguimos trazer fotos das peças agora, então preparamos buscas prontas nas lojas escolhidas. É só tocar para abrir.";
 
   return (
     <div className="space-y-6">

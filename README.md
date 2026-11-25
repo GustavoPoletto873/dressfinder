@@ -1,6 +1,6 @@
-# Achei o Vestido: buscador de vestidos e roupas na Shein Brasil
+# Achei o Vestido: buscador de vestidos e roupas em lojas online do Brasil
 
-A pessoa descreve o que procura e o app devolve opções da Shein Brasil (br.shein.com) agrupadas por estilo, cada grupo com uma explicação de por que combina com o pedido.
+A pessoa descreve o que procura e o app devolve opções das lojas que ela escolheu (Shein, Renner, C&A, Riachuelo, Dafiti e outras), agrupadas por estilo, cada grupo com uma explicação de por que combina com o pedido.
 
 O app tem **dois modos**, alternados por um switch no topo da página:
 
@@ -22,13 +22,13 @@ formulário
 1. Gera de 5 a 8 buscas curtas ─── Claude (API da Anthropic)
    │                               └─ se falhar ou não houver chave: gerador por regras
    ▼
-2. Produtos direto da Shein ────── serviço /scraper (Playwright)
-   │  sem produtos? (bloqueio, erro ou scraper desligado)
+2. Produtos direto da Shein ────── serviço /scraper (Playwright), só se a Shein foi escolhida
+   │
    ▼
-3. Anúncios com foto no Google ── SerpAPI (Google Imagens), com "site:br.shein.com <busca>"
+3. Anúncios com foto no Google ── SerpAPI (Google Imagens), com "(site:loja1 OR site:loja2) <busca>"
    │  sem resultados, sem cota ou sem chave?
    ▼
-4. Links prontos ────────────────── "Buscar na Shein" e "Buscar no Google" (sempre aparecem)
+4. Links prontos ────────────────── "Mais na <loja>" (um por loja) e "Procurar no Google" (sempre aparecem)
 ```
 
 Se até a API do próprio app cair, o navegador monta os links de busca sozinho, usando o gerador por regras.
@@ -51,6 +51,7 @@ components/
   roupas/           → formulário, flores, ramos e kit de decoração do modo Roupas
 lib/
   tipos.ts          → validação (zod): união discriminada pelo campo "modo"
+  lojas.ts          → catálogo das lojas (site:, links de busca, reconhecimento de produto)
   termosIA.ts       → buscas com o Claude (um prompt por modo)
   termosRegras.ts   → buscas por regras (escolhe o gerador do modo)
   vestidos/, roupas/→ gerador por regras e opções de cada modo
@@ -67,6 +68,33 @@ As cores ficam em variáveis CSS **por papel** em [web/src/app/globals.css](web/
 
 Trocar de modo limpa os resultados e cancela a busca em andamento. O que a pessoa digitou em cada formulário fica guardado enquanto a página estiver aberta. Os favoritos são uma lista única para os dois modos.
 
+## Lojas
+
+A pessoa escolhe **até 4 lojas** numa folha "Onde procurar?" logo acima da jornada ([web/src/components/comum/SeletorLojas.tsx](web/src/components/comum/SeletorLojas.tsx)). A escolha vale para os dois modos e fica guardada no navegador. O padrão é só a Shein.
+
+O catálogo fica em [web/src/lib/lojas.ts](web/src/lib/lojas.ts). As lojas foram escolhidas a partir do ranking de sites de moda mais visitados no Brasil (Semrush e Similarweb, outubro de 2026), mantendo só as que vendem vestidos e roupas femininas:
+
+| Loja | Busca no Google | Link "Mais na loja" |
+| --- | --- | --- |
+| Shein | `site:br.shein.com` | busca da loja |
+| Renner | `site:lojasrenner.com.br` | Google filtrado pela loja |
+| C&A | `site:cea.com.br` | busca da loja (VTEX) |
+| Riachuelo | `site:riachuelo.com.br` | Google filtrado pela loja |
+| Dafiti | `site:dafiti.com.br` | busca da loja |
+| Farm | `site:farmrio.com.br` | busca da loja (VTEX) |
+| Hering | `site:hering.com.br` | busca da loja (VTEX) |
+| Lojas Torra | `site:lojastorra.com.br` | busca da loja (VTEX) |
+| Marisa | `site:marisa.com.br` | Google filtrado pela loja |
+| Zara | `site:zara.com/br` | busca da loja |
+
+- **Todas as lojas escolhidas vão numa única busca** do Google Imagens por termo (`(site:a OR site:b ...) termo`). Escolher mais lojas **não gasta mais créditos** da SerpAPI.
+- Os resultados são intercalados (uma peça de cada loja, em rodízio), até 12 por busca, para nenhuma loja dominar a lista. Cada cartão mostra o selo da loja quando há mais de uma escolhida.
+- Renner, Riachuelo e Marisa não têm um endereço de busca simples e estável, então o link delas abre o Google filtrado pela loja.
+- A Zara aparece pouco no Google Imagens (0 resultados no teste de "vestido midi verde"); as outras trouxeram fotos normalmente. As fotos vêm dos servidores das próprias lojas.
+- O scraper continua existindo só para a Shein.
+
+Para adicionar uma loja: inclua um item em `LOJAS` com `sites` (para o `site:`), `host` (reconhece os links), `produto` (reconhece páginas de produto) e, se houver, `busca` (endereço de busca da loja). Coloque também o nome dela em `ASSINATURA_LOJA` ([web/src/lib/serpapi.ts](web/src/lib/serpapi.ts)) para limpar os títulos.
+
 ## Importante: a Shein bloqueia o scraper
 
 Nos testes locais (novembro de 2026), a Shein redirecionou **todas** as buscas automatizadas para uma página de verificação (`/risk/challenge?captcha_type=909`), antes de carregar qualquer produto. Isso aconteceu até com o navegador visível e a partir de um IP residencial. Em servidores (IP de datacenter), o bloqueio tende a ser ainda mais frequente.
@@ -75,7 +103,7 @@ O scraper **não tenta contornar** captcha nem bloqueio. Ele detecta a verifica�
 
 Por isso, **a SerpAPI é o que de fato traz anúncios para dentro do app hoje**. O scraper é opcional.
 
-Os anúncios vêm do **Google Imagens** (via SerpAPI). Cada resultado traz a foto do produto, servida pela própria Shein em 750x999, e o link da página dele. Se a foto não carregar, o app usa a miniatura do Google e, só em último caso, um desenho de flor. Essa busca custa o mesmo crédito da busca comum do Google, mas **não traz preço**. Nos cartões sem preço aparece o selo "ver preço na Shein", e o preço fica a um toque, na página do produto. O filtro de faixa de preço nunca descarta anúncios sem preço.
+Os anúncios vêm do **Google Imagens** (via SerpAPI). Cada resultado traz a foto do produto, servida pela própria loja, e o link da página dele. Se a foto não carregar, o app usa a miniatura do Google e, só em último caso, um desenho de flor. Essa busca custa o mesmo crédito da busca comum do Google, mas **não traz preço**. Nos cartões sem preço aparece o selo "ver preço na loja", e o preço fica a um toque, na página do produto. O filtro de faixa de preço nunca descarta anúncios sem preço.
 
 Fontes de preço já avaliadas (nov/2026): o **Google Shopping** do Brasil não tem a Shein como loja (0 de 40 resultados); a **busca comum do Google** traz preço em cerca de 30% dos anúncios; consultar a **página da Shein** para ler o preço esbarra na proteção anti-robô do site, que o projeto não contorna.
 
@@ -118,9 +146,9 @@ O app funciona **sem nenhuma variável configurada**, usando o gerador de buscas
 
 | Configurado | O que acontece |
 |---|---|
-| nada | buscas por regras + links da Shein e do Google |
+| nada | buscas por regras + links das lojas escolhidas e do Google |
 | `ANTHROPIC_API_KEY` | o Claude gera buscas melhores e explicações sob medida |
-| `SERPAPI_KEY` | anúncios reais da Shein, com foto, encontrados no Google Imagens, aparecem dentro do app |
+| `SERPAPI_KEY` | anúncios reais das lojas escolhidas, com foto, encontrados no Google Imagens, aparecem dentro do app |
 | `SCRAPER_URL` + `SCRAPER_TOKEN` | tenta trazer produtos com foto e preço direto da Shein |
 
 #### Gerador de buscas por regras (sem IA)
@@ -207,7 +235,7 @@ O `Dockerfile` usa a imagem oficial `mcr.microsoft.com/playwright:v1.65.1-noble`
 
 ## Custos e limites
 
-- **SerpAPI**: o plano gratuito tem 250 buscas por mês (até 50 por hora). Cada pesquisa no app consulta no máximo `SERPAPI_MAX_TERMOS` buscas (padrão 3), então o plano gratuito rende cerca de 80 pesquisas por mês. Os resultados ficam em cache por 6 horas, e buscas repetidas na própria SerpAPI dentro de 1 hora não contam na cota. Quando a cota acaba, o app mostra só os links.
+- **SerpAPI**: o plano gratuito tem 250 buscas por mês (até 50 por hora). Cada pesquisa no app consulta no máximo `SERPAPI_MAX_TERMOS` buscas (padrão 3), então o plano gratuito rende cerca de 80 pesquisas por mês. Os resultados ficam em cache por 6 horas, e buscas repetidas na própria SerpAPI dentro de 1 hora não contam na cota. Quando a cota acaba, o app mostra só os links. Com só a Shein escolhida, a SerpAPI é consultada apenas nas buscas em que o scraper não trouxe produtos; com outras lojas, é consultada nas primeiras buscas mesmo assim (a quantidade de lojas não muda o custo).
 - **Anthropic**: uma chamada curta por pesquisa (esforço baixo). Com o modelo padrão (US$ 2 por milhão de tokens de entrada e US$ 10 por milhão de saída), fica em torno de 1 a 2 centavos de dólar por pesquisa.
 - **Proteção contra abuso**: limite simples por IP em memória. Na Vercel, cada instância tem sua própria memória, então é uma proteção de melhor esforço.
 
@@ -215,13 +243,14 @@ O `Dockerfile` usa a imagem oficial `mcr.microsoft.com/playwright:v1.65.1-noble`
 
 ### `POST /api/buscar` (web)
 
-A entrada tem o campo `modo` (`"vestidos"` ou `"roupas"`) e é validada com uma união discriminada do zod. Pedidos sem `modo` são tratados como Vestidos.
+A entrada tem o campo `modo` (`"vestidos"` ou `"roupas"`) e é validada com uma união discriminada do zod. Pedidos sem `modo` são tratados como Vestidos. O campo `lojas` (lista de ids, de 1 a 4, ex.: `["shein", "renner"]`) diz onde procurar; ids desconhecidos são ignorados e, sem nenhum válido, vale `["shein"]`.
 
 Modo Vestidos (só `ocasiao` é obrigatória):
 
 ```json
 {
   "modo": "vestidos",
+  "lojas": ["shein", "renner", "cea"],
   "ocasiao": "casamento de dia",
   "comprimento": "midi",
   "cor": "verde-oliva",
@@ -258,7 +287,7 @@ Modo Roupas (só `tipoPeca` é obrigatório; com `"outra"`, `tipoOutro` também)
 
 No modo Roupas, toda busca gerada inclui o tipo de peça e, se informado, o público concordando com a peça (ex.: "calça wide leg linho bege feminina", "short jeans feminino", "moletom com capuz masculino"). Isso vale tanto para o gerador por regras quanto para o Claude.
 
-Saída (igual nos dois modos): para cada busca, `termo`, `titulo`, `motivo`, `linkShein`, `linkGoogle`, `status` do scraper (`ok`, `vazio`, `bloqueado`, `erro` ou `desativado`), `produtos`, `statusAnuncios` (`ok`, `vazio`, `cota`, `erro`, `desativado` ou `pulado`) e `anuncios`. Itens com preço fora da faixa informada são removidos. Itens sem preço são mantidos.
+Saída (igual nos dois modos): para cada busca, `termo`, `titulo`, `motivo`, `links` (um por loja: `loja`, `nome`, `url` e `viaGoogle`), `linkGoogle` (Google filtrado pelas lojas escolhidas), `status` do scraper (`ok`, `vazio`, `bloqueado`, `erro` ou `desativado`), `produtos`, `statusAnuncios` (`ok`, `vazio`, `cota`, `erro`, `desativado` ou `pulado`) e `anuncios`. Cada produto e anúncio traz o campo `loja`. Itens com preço fora da faixa informada são removidos. Itens sem preço são mantidos.
 
 ### `POST /buscar` (scraper)
 
