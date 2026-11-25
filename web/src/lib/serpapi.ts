@@ -118,7 +118,8 @@ function converterPreco(texto: string): number | null {
 }
 
 /** Nomes de loja que aparecem como "assinatura" nos títulos ("... | Marisa", "Riachuelo | ..."). */
-const ASSINATURA_LOJA = /^(shein( brasil)?|lojas renner|renner|c&a|cea|riachuelo|dafiti|farm( rio)?|hering|lojas torra|torra|marisa|zara( brasil)?)$/i;
+const ASSINATURA_LOJA =
+  /^(shein( brasil)?|lojas renner|renner|c&a|cea|riachuelo|dafiti|farm( rio)?|hering|lojas torra|torra|marisa|zara( brasil)?|zattini|h&m( brasil)?|posthaus|oqvestir|shop2gether|amaro|farfetch|animale|zinzane|compre online)$/i;
 
 function limparTitulo(titulo: string): string {
   // "Riachuelo | Vestido midi godê - Verde | Pool" → fica o pedaço mais longo que não é o nome da loja
@@ -126,6 +127,9 @@ function limparTitulo(titulo: string): string {
   const principal = partes.sort((a, b) => b.length - a.length)[0] ?? titulo;
   let limpo = principal
     .replace(/\s+[-–]\s+([^-–]+)$/, (trecho, fim: string) => (ASSINATURA_LOJA.test(fim.trim()) ? "" : trecho)) // "... - Marisa"
+    .replace(/\s+[-–]\s+(Size|Tamanho):?\s*\S+$/i, "") // "... - Size: M" (H&M)
+    .replace(/\s+[-–]\s+(PP|P|M|G|GG|XG|EG|U|\d{2})$/, "") // "... - PP", "... - 40"
+    .replace(/^(Ladies|Women|Mulher)\s+[-–]\s+/i, "") // "Ladies - Vestido..." (H&M)
     .replace(/\s*[|\-–]\s*SHEIN.*$/i, "") // "... - SHEIN Brasil"
     .replace(/\s*[-–]\s*(Product Video|V[íi]deo( do produto)?)\s*$/i, "") // "... - Product Video"
     .replace(/^SHEIN\s+/i, "") // "SHEIN Vestido..."
@@ -141,7 +145,10 @@ function limparTitulo(titulo: string): string {
       .replace(/[\s,;:]+$/, "")
       .replace(/[\s,]+(e|com|de|da|do|sem|para|em|no|na|a|o)$/i, ""); // conectivo solto no fim
   }
-  limpo = limpo.trim() || titulo;
+  limpo = limpo.replace(/\s+Cor:.*$/i, "").trim() || titulo; // "... B79 Cor:;Tamanho:Unico"
+  if (!/\s/.test(limpo) && limpo.includes("-")) limpo = limpo.replace(/-+/g, " "); // "VESTIDO-POLO-TRICOT"
+  const letras = limpo.replace(/[^\p{L}]/gu, "");
+  if (letras.length > 8 && letras === letras.toUpperCase()) limpo = limpo.toLocaleLowerCase("pt-BR"); // TUDO EM CAIXA ALTA
   // algumas lojas (ex.: C&A) mandam o título todo em minúsculas
   return limpo.charAt(0).toLocaleUpperCase("pt-BR") + limpo.slice(1);
 }
@@ -187,6 +194,7 @@ function converterResultados(itens: ResultadoImagem[], lojas: string[], excluir?
     }
     const loja = lojaDoLink(url);
     if (!loja || !porLoja.has(loja.id)) continue;
+    if (/\/blog\//i.test(url.pathname)) continue; // posts de blog não são peças (ex.: AMARO)
     const textoBusca = `${decodificar(url.pathname)} ${item.title}`;
     if (INFANTIL.test(textoBusca) || (excluir && excluir.test(textoBusca))) continue;
     url.protocol = "https:";

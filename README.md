@@ -72,28 +72,39 @@ Trocar de modo limpa os resultados e cancela a busca em andamento. O que a pesso
 
 A pessoa escolhe **até 4 lojas** numa folha "Onde procurar?" logo acima da jornada ([web/src/components/comum/SeletorLojas.tsx](web/src/components/comum/SeletorLojas.tsx)). A escolha vale para os dois modos e fica guardada no navegador. O padrão é só a Shein.
 
-O catálogo fica em [web/src/lib/lojas.ts](web/src/lib/lojas.ts). As lojas foram escolhidas a partir do ranking de sites de moda mais visitados no Brasil (Semrush e Similarweb, outubro de 2026), mantendo só as que vendem vestidos e roupas femininas:
+O catálogo fica em [web/src/lib/lojas.ts](web/src/lib/lojas.ts). São 19 lojas, escolhidas a partir dos sites de moda feminina mais visitados no Brasil (Semrush e Similarweb, out./nov. de 2026) e mostradas em quatro grupos:
 
-| Loja | Busca no Google | Link "Mais na loja" |
-| --- | --- | --- |
-| Shein | `site:br.shein.com` | busca da loja |
-| Renner | `site:lojasrenner.com.br` | Google filtrado pela loja |
-| C&A | `site:cea.com.br` | busca da loja (VTEX) |
-| Riachuelo | `site:riachuelo.com.br` | Google filtrado pela loja |
-| Dafiti | `site:dafiti.com.br` | busca da loja |
-| Farm | `site:farmrio.com.br` | busca da loja (VTEX) |
-| Hering | `site:hering.com.br` | busca da loja (VTEX) |
-| Lojas Torra | `site:lojastorra.com.br` | busca da loja (VTEX) |
-| Marisa | `site:marisa.com.br` | Google filtrado pela loja |
-| Zara | `site:zara.com/br` | busca da loja |
+| Grupo | Loja | Busca no Google | Link "Mais na loja" |
+| --- | --- | --- | --- |
+| Gigantes e marketplaces | Shein | `site:br.shein.com` | busca da loja |
+| | Dafiti | `site:dafiti.com.br` | busca da loja |
+| | Zattini | `site:zattini.com.br` | busca da loja (`/busca/termo-em-slug`) |
+| | Zara | `site:zara.com/br` | busca da loja |
+| | H&M | `site:hm.com.br` | busca da loja (VTEX) |
+| Grandes varejistas | Renner | `site:lojasrenner.com.br` | Google filtrado pela loja |
+| | C&A | `site:cea.com.br` | busca da loja (VTEX) |
+| | Riachuelo | `site:riachuelo.com.br` | Google filtrado pela loja |
+| | Marisa | `site:marisa.com.br` | Google filtrado pela loja |
+| | Hering | `site:hering.com.br` | busca da loja (VTEX) |
+| | Lojas Torra | `site:lojastorra.com.br` | busca da loja (VTEX) |
+| | Posthaus | `site:posthaus.com.br` | Google filtrado pela loja |
+| Curadoria e luxo | OQVestir | `site:oqvestir.com.br` | busca da loja (`/busca?busca=`) |
+| | Shop2gether | `site:shop2gether.com.br` | busca da loja (`/busca?busca=`) |
+| | AMARO | `site:amaro.com` | busca da loja (`/search/?q=`) |
+| | Farfetch | `site:farfetch.com/br` | Google filtrado pela loja |
+| Marcas femininas | Farm | `site:farmrio.com.br` | busca da loja (VTEX) |
+| | Animale | `site:animale.com.br` | busca da loja (VTEX) |
+| | Zinzane | `site:zinzane.com.br` | busca da loja (VTEX) |
 
 - **Todas as lojas escolhidas vão numa única busca** do Google Imagens por termo (`(site:a OR site:b ...) termo`). Escolher mais lojas **não gasta mais créditos** da SerpAPI.
-- Os resultados são intercalados (uma peça de cada loja, em rodízio), até 12 por busca, para nenhuma loja dominar a lista. Cada cartão mostra o selo da loja quando há mais de uma escolhida.
-- Renner, Riachuelo e Marisa não têm um endereço de busca simples e estável, então o link delas abre o Google filtrado pela loja.
-- A Zara aparece pouco no Google Imagens (0 resultados no teste de "vestido midi verde"); as outras trouxeram fotos normalmente. As fotos vêm dos servidores das próprias lojas.
+- Os resultados são intercalados (uma peça de cada loja, em rodízio), até 12 por busca, para nenhuma loja dominar a lista (a Posthaus, por exemplo, sozinha devolve 31 de 50 resultados). Cada cartão mostra o selo da loja quando há mais de uma escolhida.
+- Nas lojas VTEX, a busca usa `/s?q=termo` (conferido em nov/2026; o formato `/termo?_q=termo&map=ft` dava 404 em várias delas).
+- Renner, Riachuelo, Marisa, Posthaus e Farfetch não têm um endereço de busca simples que pudesse ser conferido, então o link delas abre o Google filtrado pela loja.
+- Aparecem pouco no Google Imagens: **Zara**, **Farfetch** (quase só páginas de categoria) e **AMARO** (quase só posts de blog, que o app descarta). As outras trazem fotos normalmente, servidas pelas próprias lojas.
+- A **Privalia** ficou de fora: é um clube fechado, as peças só aparecem depois do cadastro, então nem a busca do Google nem o link funcionariam.
 - O scraper continua existindo só para a Shein.
 
-Para adicionar uma loja: inclua um item em `LOJAS` com `sites` (para o `site:`), `host` (reconhece os links), `produto` (reconhece páginas de produto) e, se houver, `busca` (endereço de busca da loja). Coloque também o nome dela em `ASSINATURA_LOJA` ([web/src/lib/serpapi.ts](web/src/lib/serpapi.ts)) para limpar os títulos.
+Para adicionar uma loja: inclua um item em `LOJAS` com `grupo`, `sites` (para o `site:`), `host` (reconhece os links), `produto` (reconhece páginas de produto) e, se houver, `busca` (endereço de busca da loja). Coloque também o nome dela em `ASSINATURA_LOJA` ([web/src/lib/serpapi.ts](web/src/lib/serpapi.ts)) para limpar os títulos.
 
 ## Importante: a Shein bloqueia o scraper
 
