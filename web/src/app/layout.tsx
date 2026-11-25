@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Great_Vibes, Jost } from "next/font/google";
+import { SCRIPT_TEMA_INICIAL } from "@/lib/tema";
 import "./globals.css";
 
 /** Texto de interface: limpa e muito legível em telas pequenas. */
@@ -37,7 +38,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       className={`${fonteTexto.variable} ${fonteTitulo.variable} ${fonteCursiva.variable} h-full antialiased`}
+      // o script abaixo define data-tema antes da hidratação; o React não deve reclamar disso
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

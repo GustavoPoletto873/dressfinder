@@ -3,19 +3,20 @@
 import { useState } from "react";
 import type { Anuncio, Produto, RespostaBusca, ResultadoBusca } from "@/lib/tipos";
 import { BotaoCoracao } from "./favoritos";
-import { CORES, Em, Florzinha, Folha, Margarida } from "./flores";
 import { IconeExterno, IconeFlor, IconeLapis, IconeLupa, IconeSacola, IconeSeta } from "./icones";
+import { useKitDecoracao } from "./kitDecoracao";
+import { useModo } from "./modo";
 
 const linkExterno = { target: "_blank", rel: "noopener noreferrer" } as const;
 
 /** Imagem do produto com placeholder florido quando não há foto. */
 function Foto({ src, alt, className = "" }: { src: string | null; alt: string; className?: string }) {
+  const { FlorSemFoto } = useKitDecoracao();
   if (!src) {
     return (
-      <div className={"grid place-items-center bg-rosa-bebe " + className}>
+      <div className={"grid place-items-center bg-primaria-suave " + className}>
         <svg viewBox="-30 -30 60 60" className="w-1/2 opacity-80" aria-hidden>
-          <Em x={-14} y={10} r={-150} s={0.6}><Folha /></Em>
-          <Em x={0} y={0}><Margarida /></Em>
+          <FlorSemFoto />
         </svg>
       </div>
     );
@@ -30,7 +31,7 @@ function Foto({ src, alt, className = "" }: { src: string | null; alt: string; c
 function CardProduto({ produto, indice }: { produto: Produto; indice: number }) {
   return (
     <article className="surgir group flex flex-col" style={{ animationDelay: `${Math.min(indice, 8) * 60}ms` }}>
-      <div className="relative overflow-hidden rounded-3xl bg-creme-escuro shadow-suave transition-shadow duration-300 group-hover:shadow-elevada">
+      <div className="relative overflow-hidden rounded-3xl bg-fundo-escuro shadow-suave transition-shadow duration-300 group-hover:shadow-elevada">
         <a href={produto.url} {...linkExterno} tabIndex={-1} aria-hidden>
           <Foto
             src={produto.imagem}
@@ -43,16 +44,16 @@ function CardProduto({ produto, indice }: { produto: Produto; indice: number }) 
           className="absolute right-2.5 top-2.5"
         />
         {produto.preco && (
-          <span className="absolute bottom-2.5 left-2.5 rounded-full bg-papel/95 px-3 py-1 text-sm font-semibold shadow-suave backdrop-blur">
+          <span className="absolute bottom-2.5 left-2.5 rounded-full bg-superficie/95 px-3 py-1 text-sm font-semibold shadow-suave backdrop-blur">
             {produto.preco}
           </span>
         )}
       </div>
-      <h4 className="mt-3 line-clamp-2 px-1 text-sm leading-snug text-tinta">{produto.titulo}</h4>
+      <h4 className="mt-3 line-clamp-2 px-1 text-sm leading-snug text-texto">{produto.titulo}</h4>
       <a
         href={produto.url}
         {...linkExterno}
-        className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-rosa/40 px-4 py-2 text-sm font-medium text-rosa-forte transition-all duration-200 hover:border-rosa hover:bg-rosa hover:text-white active:scale-95"
+        className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-destaque/40 px-4 py-2 text-sm font-medium text-primaria-forte transition-all duration-200 hover:border-primaria hover:bg-primaria hover:text-white active:scale-95"
       >
         Ver na Shein <IconeExterno className="size-3.5" />
       </a>
@@ -64,14 +65,14 @@ function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) 
   const ehProduto = anuncio.tipo === "produto";
   return (
     <article
-      className="surgir flex gap-4 rounded-3xl border border-linha bg-papel p-3.5 shadow-suave transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevada"
+      className="surgir flex gap-4 rounded-3xl border border-borda bg-superficie p-3.5 shadow-suave transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevada"
       style={{ animationDelay: `${Math.min(indice, 8) * 60}ms` }}
     >
       {anuncio.imagem ? (
         <Foto src={anuncio.imagem} alt="" className="h-28 w-21 shrink-0 rounded-2xl" />
       ) : (
         // sem foto: ícone pequeno, para o cartão ficar compacto
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-rosa-bebe text-rosa">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primaria-suave text-primaria">
           {ehProduto ? <IconeFlor className="size-5" /> : <IconeSacola className="size-5" />}
         </span>
       )}
@@ -86,11 +87,11 @@ function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) 
           )}
         </div>
         {anuncio.preco && <p className="mt-1 font-semibold">{anuncio.preco}</p>}
-        {anuncio.trecho && <p className="mt-1 line-clamp-2 text-xs text-suave">{anuncio.trecho}</p>}
+        {anuncio.trecho && <p className="mt-1 line-clamp-2 text-xs text-texto-suave">{anuncio.trecho}</p>}
         <a
           href={anuncio.url}
           {...linkExterno}
-          className="mt-auto inline-flex w-fit items-center gap-1.5 pt-2 text-sm font-medium text-rosa-forte underline-offset-4 transition hover:text-rosa hover:underline"
+          className="mt-auto inline-flex w-fit items-center gap-1.5 pt-2 text-sm font-medium text-primaria-forte underline-offset-4 transition hover:text-primaria hover:underline"
         >
           {ehProduto ? "Ver na Shein" : "Abrir lista na Shein"} <IconeExterno className="size-3.5" />
         </a>
@@ -101,42 +102,45 @@ function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) 
 
 /** Botões de busca pronta. Em destaque quando são o único conteúdo do grupo. */
 function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boolean }) {
+  const modo = useModo();
   if (destaque) {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
         <a
           href={busca.linkShein}
           {...linkExterno}
-          className="group flex items-center gap-3 rounded-2xl bg-rosa px-5 py-4 text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-rosa-forte active:scale-[0.98]"
+          className="group flex items-center gap-3 rounded-2xl bg-primaria px-5 py-4 text-white shadow-elevada transition-all duration-200 hover:-translate-y-0.5 hover:bg-primaria-forte active:scale-[0.98]"
         >
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/20">
             <IconeSacola className="size-5" />
           </span>
           <span className="flex-1">
             <span className="block font-medium">Ver esta busca na Shein</span>
-            <span className="block text-sm text-white/80">Abre a lista de vestidos</span>
+            <span className="block text-sm text-white/80">
+              {modo === "roupas" ? "Abre a lista de peças" : "Abre a lista de vestidos"}
+            </span>
           </span>
           <IconeExterno className="size-4 opacity-70 transition group-hover:opacity-100" />
         </a>
         <a
           href={busca.linkGoogle}
           {...linkExterno}
-          className="group flex items-center gap-3 rounded-2xl border border-linha bg-papel px-5 py-4 shadow-suave transition-all duration-200 hover:-translate-y-0.5 hover:border-rosa/40 active:scale-[0.98]"
+          className="group flex items-center gap-3 rounded-2xl border border-borda bg-superficie px-5 py-4 shadow-suave transition-all duration-200 hover:-translate-y-0.5 hover:border-destaque/40 active:scale-[0.98]"
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-salvia-claro text-salvia">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secundaria-suave text-secundaria">
             <IconeLupa className="size-5" />
           </span>
           <span className="flex-1">
             <span className="block font-medium">Procurar no Google</span>
-            <span className="block text-sm text-suave">Só resultados da Shein</span>
+            <span className="block text-sm text-texto-suave">Só resultados da Shein</span>
           </span>
-          <IconeExterno className="size-4 text-suave opacity-70 transition group-hover:opacity-100" />
+          <IconeExterno className="size-4 text-texto-suave opacity-70 transition group-hover:opacity-100" />
         </a>
       </div>
     );
   }
   const classe =
-    "inline-flex items-center gap-2 rounded-full border border-linha bg-papel px-4 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rosa/40 hover:text-rosa-forte active:scale-95";
+    "inline-flex items-center gap-2 rounded-full border border-borda bg-superficie px-4 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-destaque/40 hover:text-primaria-forte active:scale-95";
   return (
     <div className="flex flex-wrap gap-2">
       <a href={busca.linkShein} {...linkExterno} className={classe}>
@@ -158,7 +162,7 @@ function BotaoVerMais({ restantes, onClick }: { restantes: number; onClick: () =
     <button
       type="button"
       onClick={onClick}
-      className="mx-auto mb-6 flex items-center gap-1.5 rounded-full border border-dashed border-rosa/40 px-5 py-2 text-sm text-rosa-forte transition hover:border-solid hover:bg-rosa-bebe active:scale-95"
+      className="mx-auto mb-6 flex items-center gap-1.5 rounded-full border border-dashed border-destaque/40 px-5 py-2 text-sm text-primaria-forte transition hover:border-solid hover:bg-primaria-suave active:scale-95"
     >
       Ver mais {restantes} {restantes === 1 ? "opção" : "opções"}
       <IconeSeta className="size-4" />
@@ -175,16 +179,16 @@ function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }
   return (
     <section
       id={`grupo-${indice}`}
-      className="surgir scroll-mt-24 rounded-[2rem] border border-linha bg-papel/80 p-5 shadow-suave backdrop-blur-sm sm:p-7"
+      className="surgir scroll-mt-24 rounded-[2rem] border border-borda bg-superficie/80 p-5 shadow-suave backdrop-blur-sm sm:p-7"
       style={{ animationDelay: `${indice * 90}ms` }}
     >
       <header className="mb-5 space-y-1.5">
-        <div className="flex items-center gap-2 text-rosa">
+        <div className="flex items-center gap-2 text-primaria">
           <IconeFlor className="size-4" />
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-suave">Ideia {indice + 1}</span>
+          <span className="text-xs font-medium uppercase tracking-[0.18em] text-texto-suave">Ideia {indice + 1}</span>
         </div>
         <h3 className="font-titulo text-[1.75rem] font-semibold leading-tight">{busca.titulo}</h3>
-        <p className="max-w-2xl text-suave">{busca.motivo}</p>
+        <p className="max-w-2xl text-texto-suave">{busca.motivo}</p>
       </header>
 
       {temProdutos && (
@@ -213,8 +217,8 @@ function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }
       )}
 
       <BotoesBusca busca={busca} destaque={!temProdutos && !temAnuncios} />
-      <p className="mt-4 text-xs text-suave">
-        Buscamos por <span className="rounded-full bg-rosa-bebe px-2 py-0.5 text-tinta">{busca.termo}</span>
+      <p className="mt-4 text-xs text-texto-suave">
+        Buscamos por <span className="rounded-full bg-primaria-suave px-2 py-0.5 text-texto">{busca.termo}</span>
       </p>
     </section>
   );
@@ -229,6 +233,7 @@ interface Props {
 
 export function Resultados({ resposta, resumo, aoEditar }: Props) {
   const { totalProdutos, totalAnuncios, buscas } = resposta;
+  const { FlorAviso } = useKitDecoracao();
   const aviso =
     totalProdutos > 0
       ? null
@@ -239,13 +244,13 @@ export function Resultados({ resposta, resumo, aoEditar }: Props) {
   return (
     <div className="space-y-6">
       <header className="surgir flex flex-col items-center gap-3 text-center">
-        <h2 className="font-cursiva text-5xl leading-tight text-rosa sm:text-6xl">Suas ideias</h2>
-        <p className="font-titulo text-xl italic text-tinta">
+        <h2 className="font-cursiva text-5xl leading-tight text-primaria sm:text-6xl">Suas ideias</h2>
+        <p className="font-titulo text-xl italic text-texto">
           {buscas.length} caminhos pensados para você
         </p>
         <div className="flex flex-wrap justify-center gap-1.5">
           {resumo.map((r) => (
-            <span key={r} className="rounded-full bg-salvia-claro px-3 py-1 text-xs text-tinta">
+            <span key={r} className="rounded-full bg-secundaria-suave px-3 py-1 text-xs text-texto">
               {r}
             </span>
           ))}
@@ -253,16 +258,16 @@ export function Resultados({ resposta, resumo, aoEditar }: Props) {
         <button
           type="button"
           onClick={aoEditar}
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-rosa-forte transition hover:bg-rosa-bebe"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-primaria-forte transition hover:bg-primaria-suave"
         >
           <IconeLapis className="size-4" /> Ajustar a busca
         </button>
       </header>
 
       {aviso && (
-        <p className="surgir mx-auto flex max-w-2xl items-start gap-2 rounded-2xl bg-creme-escuro/70 px-4 py-3 text-sm text-suave" role="status">
+        <p className="surgir mx-auto flex max-w-2xl items-start gap-2 rounded-2xl bg-fundo-escuro/70 px-4 py-3 text-sm text-texto-suave" role="status">
           <svg viewBox="-12 -12 24 24" className="mt-0.5 size-4 shrink-0" aria-hidden>
-            <Florzinha cor={CORES.lavanda} />
+            <FlorAviso />
           </svg>
           {aviso}
         </p>
@@ -271,12 +276,12 @@ export function Resultados({ resposta, resumo, aoEditar }: Props) {
       {buscas.length > 2 && (
         // padding à direita: deixa espaço para o botão fixo de favoritos
         <nav aria-label="Ir para uma ideia" className="sticky top-3 z-20 -mx-4 pl-4 pr-20 sm:mx-0 sm:pl-0 sm:pr-40 2xl:pr-0">
-          <div className="sem-barra mx-auto flex w-fit max-w-full gap-2 overflow-x-auto rounded-full border border-linha bg-papel/90 p-1.5 shadow-suave backdrop-blur">
+          <div className="sem-barra mx-auto flex w-fit max-w-full gap-2 overflow-x-auto rounded-full border border-borda bg-superficie/90 p-1.5 shadow-suave backdrop-blur">
             {buscas.map((b, i) => (
               <a
                 key={b.termo}
                 href={`#grupo-${i}`}
-                className="shrink-0 rounded-full px-3.5 py-1.5 text-sm text-suave transition hover:bg-rosa-bebe hover:text-rosa-forte"
+                className="shrink-0 rounded-full px-3.5 py-1.5 text-sm text-texto-suave transition hover:bg-primaria-suave hover:text-primaria-forte"
               >
                 {b.titulo}
               </a>

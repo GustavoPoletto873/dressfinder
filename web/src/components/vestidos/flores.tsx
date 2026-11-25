@@ -1,16 +1,16 @@
 /**
- * Flores desenhadas em SVG, usadas nos ramos decorativos e na tela de carregamento.
+ * Flores do modo Vestidos: rosas, margaridas, florzinhas, lavandas e tulipas,
+ * em tons de rosa, pêssego, lavanda e manteiga.
  *
  * Cada flor é desenhada centrada em (0,0). Quem usa posiciona com <Em x y ...>.
- * As animações (florescer, brotar, desenhar) estão em globals.css.
+ * As peças genéricas (caule, folha, botão...) ficam em comum/botanica.tsx.
  */
-import type { CSSProperties, ReactNode } from "react";
+import { atraso, Botao as BotaoBase, Caule, Em, Folha, FOLHAGEM, Frutinhas as FrutinhasBase, Petala as PetalaBase } from "../comum/botanica";
+
+export { Caule, Em, Folha };
 
 export const CORES = {
-  caule: "#8fa58a",
-  cauleEscuro: "#76906f",
-  folha: "#a9c0a0",
-  folhaEscura: "#8aa585",
+  ...FOLHAGEM,
   rosa: "#f2b8c2",
   rosaMedio: "#e695a3",
   rosaForte: "#c96a7d",
@@ -23,54 +23,6 @@ export const CORES = {
   contorno: "#e7d9c9",
   coral: "#ef9a8b",
 };
-
-const atraso = (s: number): CSSProperties => ({ animationDelay: `${s}s` });
-
-/** Posiciona um elemento: translate + rotate + scale (atributo SVG, não CSS). */
-export function Em({
-  x,
-  y,
-  r = 0,
-  s = 1,
-  children,
-}: {
-  x: number;
-  y: number;
-  r?: number;
-  s?: number;
-  children: ReactNode;
-}) {
-  return <g transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>{children}</g>;
-}
-
-/** Caule que se "desenha" ao carregar. */
-export function Caule({ d, atrasoS = 0, largura = 2.2, cor = CORES.caule }: { d: string; atrasoS?: number; largura?: number; cor?: string }) {
-  return (
-    <path
-      d={d}
-      pathLength={1}
-      className="desenhar"
-      style={atraso(atrasoS)}
-      fill="none"
-      stroke={cor}
-      strokeWidth={largura}
-      strokeLinecap="round"
-    />
-  );
-}
-
-/** Folha com nervura; nasce em (0,0) e aponta para a direita. */
-export function Folha({ atrasoS = 0, cor = CORES.folha, tamanho = 1 }: { atrasoS?: number; cor?: string; tamanho?: number }) {
-  return (
-    // escala no grupo de fora; o de dentro recebe a animação (CSS transform anularia o atributo)
-    <g transform={`scale(${tamanho})`}>
-      <g className="brotar" style={atraso(atrasoS)}>
-        <path d="M0 0 C 7 -9, 22 -11, 34 0 C 22 11, 7 9, 0 0 Z" fill={cor} />
-        <path d="M2 0 C 12 -1, 22 -1, 31 0" stroke={CORES.folhaEscura} strokeWidth={0.9} fill="none" strokeLinecap="round" />
-      </g>
-    </g>
-  );
-}
 
 /** Rosa em camadas, com espiral no miolo. */
 export function Rosa({ atrasoS = 0, tom = "rosa" }: { atrasoS?: number; tom?: "rosa" | "pessego" }) {
@@ -148,31 +100,17 @@ export function Tulipa({ atrasoS = 0, cor = CORES.coral }: { atrasoS?: number; c
   );
 }
 
-/** Botão de flor fechado. */
+/** Botão de flor fechado (rosa, por padrão). */
 export function Botao({ atrasoS = 0, cor = CORES.rosaMedio }: { atrasoS?: number; cor?: string }) {
-  return (
-    <g className="florescer" style={atraso(atrasoS)}>
-      <path d="M0 -10 C 5 -6, 5 2, 0 4 C -5 2, -5 -6, 0 -10 Z" fill={cor} />
-      <path d="M-4 1 C -2 4, 2 4, 4 1 L 0 6 Z" fill={CORES.folha} />
-    </g>
-  );
+  return <BotaoBase atrasoS={atrasoS} cor={cor} />;
 }
 
-/** Cachinho de frutinhas. */
+/** Cachinho de frutinhas (rosadas, por padrão). */
 export function Frutinhas({ atrasoS = 0, cor = "#e8b4bf" }: { atrasoS?: number; cor?: string }) {
-  const pontos: [number, number, number][] = [[0, 0, 3.2], [6, -3, 2.8], [3, 5, 2.6], [-5, 4, 2.4], [8, 4, 2.2]];
-  return (
-    <g>
-      {pontos.map(([x, y, r], i) => (
-        <g key={i} transform={`translate(${x} ${y})`}>
-          <circle className="florescer" style={atraso(atrasoS + i * 0.08)} r={r} fill={cor} />
-        </g>
-      ))}
-    </g>
-  );
+  return <FrutinhasBase atrasoS={atrasoS} cor={cor} />;
 }
 
-/** Pétala solta (usada caindo na tela de carregamento). */
+/** Pétala solta (rosa, por padrão). */
 export function Petala({ cor = CORES.rosa }: { cor?: string }) {
-  return <path d="M0 0 C -5 -4, -5 -11, 0 -12 C 5 -11, 5 -4, 0 0 Z" fill={cor} />;
+  return <PetalaBase cor={cor} />;
 }

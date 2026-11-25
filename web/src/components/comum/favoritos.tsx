@@ -10,7 +10,7 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { IconeCoracao, IconeExterno, IconeFechar, IconeLixeira } from "./icones";
-import { CORES, Em, Florzinha, Folha, Margarida, Rosa } from "./flores";
+import { useKitDecoracao } from "./kitDecoracao";
 
 export interface Favorito {
   url: string;
@@ -96,9 +96,9 @@ export function Aviso() {
       {aviso && (
         <div
           key={aviso.id}
-          className="aviso-entrar absolute left-1/2 flex items-center gap-2 whitespace-nowrap rounded-full bg-tinta px-4 py-2.5 text-sm text-creme shadow-elevada"
+          className="aviso-entrar absolute left-1/2 flex items-center gap-2 whitespace-nowrap rounded-full bg-texto px-4 py-2.5 text-sm text-fundo shadow-elevada"
         >
-          <IconeCoracao className="size-4 text-rosa-claro" cheio />
+          <IconeCoracao className="size-4 text-realce" cheio />
           {aviso.texto}
         </div>
       )}
@@ -123,8 +123,8 @@ export function BotaoCoracao({ item, className = "" }: { item: Favorito; classNa
       aria-pressed={ativo}
       aria-label={ativo ? `Remover ${item.titulo} dos favoritos` : `Salvar ${item.titulo} nos favoritos`}
       className={
-        "grid size-10 place-items-center rounded-full bg-papel/90 shadow-suave backdrop-blur transition-colors hover:bg-papel " +
-        (ativo ? "text-rosa" : "text-suave hover:text-rosa") +
+        "grid size-10 place-items-center rounded-full bg-superficie/90 shadow-suave backdrop-blur transition-colors hover:bg-superficie " +
+        (ativo ? "text-primaria" : "text-texto-suave hover:text-primaria") +
         " " +
         className
       }
@@ -141,6 +141,7 @@ export function BotaoCoracao({ item, className = "" }: { item: Favorito; classNa
 
 export function BotaoFavoritos() {
   const { lista, remover } = useFavoritos();
+  const { ArranjoVazio } = useKitDecoracao();
   const gaveta = useRef<HTMLDialogElement>(null);
   const [animarContador, setAnimarContador] = useState(false);
   const total = lista.length;
@@ -167,14 +168,14 @@ export function BotaoFavoritos() {
         type="button"
         onClick={() => gaveta.current?.showModal()}
         aria-label={`Abrir favoritos (${total})`}
-        className="group relative flex h-11 items-center gap-2 rounded-full border border-linha bg-papel/90 px-3.5 text-sm font-medium shadow-suave backdrop-blur transition hover:-translate-y-0.5 hover:border-rosa/40 hover:shadow-elevada active:translate-y-0 sm:px-4"
+        className="group relative flex h-11 items-center gap-2 rounded-full border border-borda bg-superficie/90 px-3.5 text-sm font-medium shadow-suave backdrop-blur transition hover:-translate-y-0.5 hover:border-destaque/40 hover:shadow-elevada active:translate-y-0 sm:px-4"
       >
-        <IconeCoracao cheio={total > 0} className="size-5 text-rosa transition-transform group-hover:scale-110" />
+        <IconeCoracao cheio={total > 0} className="size-5 text-primaria transition-transform group-hover:scale-110" />
         <span className="hidden sm:inline">Favoritos</span>
         {total > 0 && (
           <span
             className={
-              "grid min-w-5 place-items-center rounded-full bg-rosa px-1.5 text-xs font-semibold text-white " +
+              "grid min-w-5 place-items-center rounded-full bg-primaria px-1.5 text-xs font-semibold text-white " +
               (animarContador ? "coracao-pulo" : "")
             }
           >
@@ -190,21 +191,22 @@ export function BotaoFavoritos() {
           // clique fora do painel fecha a gaveta
           if (e.target === e.currentTarget) e.currentTarget.close();
         }}
-        className="gaveta m-0 ml-auto h-dvh max-h-none w-full max-w-md bg-creme p-0 text-tinta shadow-elevada"
+        className="gaveta m-0 ml-auto h-dvh max-h-none w-full max-w-md bg-fundo p-0 text-texto shadow-elevada"
       >
         <div className="flex h-full flex-col">
-          <header className="flex items-center justify-between border-b border-linha px-6 py-5">
+          <header className="flex items-center justify-between border-b border-borda px-6 py-5">
             <div>
-              <h2 className="font-cursiva text-4xl leading-none text-rosa">Favoritos</h2>
-              <p className="mt-1 text-sm text-suave">
-                {total === 0 ? "Nenhum vestido salvo ainda" : `${total} ${total === 1 ? "vestido salvo" : "vestidos salvos"}`}
+              <h2 className="font-cursiva text-4xl leading-none text-primaria">Favoritos</h2>
+              <p className="mt-1 text-sm text-texto-suave">
+                {/* lista única para os dois modos: por isso "peça" em vez de "vestido" */}
+                {total === 0 ? "Nenhuma peça salva ainda" : `${total} ${total === 1 ? "peça salva" : "peças salvas"}`}
               </p>
             </div>
             <button
               type="button"
               onClick={() => gaveta.current?.close()}
               aria-label="Fechar favoritos"
-              className="grid size-10 place-items-center rounded-full text-suave transition hover:bg-rosa-bebe hover:text-tinta"
+              className="grid size-10 place-items-center rounded-full text-texto-suave transition hover:bg-primaria-suave hover:text-texto"
             >
               <IconeFechar className="size-5" />
             </button>
@@ -213,25 +215,21 @@ export function BotaoFavoritos() {
           {total === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 px-10 text-center">
               <svg viewBox="-50 -40 100 70" className="w-40" aria-hidden>
-                <Em x={-22} y={4} r={-160} s={0.8}><Folha /></Em>
-                <Em x={20} y={6} r={-20} s={0.8}><Folha /></Em>
-                <Em x={0} y={0} s={1.1}><Rosa /></Em>
-                <Em x={-26} y={-14} s={0.6}><Florzinha cor={CORES.lavanda} /></Em>
-                <Em x={28} y={-12} s={0.55}><Margarida /></Em>
+                <ArranjoVazio />
               </svg>
-              <p className="text-suave">
-                Toque no <IconeCoracao className="inline size-4 align-[-2px] text-rosa" /> de um vestido para guardar aqui e comparar depois.
+              <p className="text-texto-suave">
+                Toque no <IconeCoracao className="inline size-4 align-[-2px] text-primaria" /> de uma peça para guardar aqui e comparar depois.
               </p>
             </div>
           ) : (
             <ul className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
               {lista.map((f) => (
-                <li key={f.url} className="flex gap-3 rounded-2xl border border-linha bg-papel p-3 shadow-suave">
+                <li key={f.url} className="flex gap-3 rounded-2xl border border-borda bg-superficie p-3 shadow-suave">
                   {f.imagem ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={f.imagem} alt="" referrerPolicy="no-referrer" className="h-24 w-18 shrink-0 rounded-xl object-cover" />
                   ) : (
-                    <div className="grid h-24 w-18 shrink-0 place-items-center rounded-xl bg-rosa-bebe text-rosa">
+                    <div className="grid h-24 w-18 shrink-0 place-items-center rounded-xl bg-primaria-suave text-primaria">
                       <IconeCoracao className="size-6" />
                     </div>
                   )}
@@ -243,7 +241,7 @@ export function BotaoFavoritos() {
                         href={f.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-rosa px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-rosa-forte"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primaria px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-primaria-forte"
                       >
                         Ver na Shein <IconeExterno className="size-3.5" />
                       </a>
@@ -251,7 +249,7 @@ export function BotaoFavoritos() {
                         type="button"
                         onClick={() => remover(f.url)}
                         aria-label={`Remover ${f.titulo}`}
-                        className="grid size-8 place-items-center rounded-full text-suave transition hover:bg-rosa-bebe hover:text-rosa-forte"
+                        className="grid size-8 place-items-center rounded-full text-texto-suave transition hover:bg-primaria-suave hover:text-primaria-forte"
                       >
                         <IconeLixeira className="size-4" />
                       </button>

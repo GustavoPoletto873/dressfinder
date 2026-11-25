@@ -1,8 +1,8 @@
 /**
  * POST /api/buscar
  *
- * 1. Valida a entrada (zod).
- * 2. Gera 5 a 8 buscas (Claude; se falhar, regras locais).
+ * 1. Valida a entrada (zod): um formulário por modo ("vestidos" ou "roupas").
+ * 2. Gera 5 a 8 buscas (Claude com o prompt do modo; se falhar, regras do modo).
  * 3. Monta os links de busca da Shein e do Google (sempre disponíveis).
  * 4. Consulta o scraper em paralelo, com timeout total de 25 s.
  * 5. Para as buscas que ficaram sem produtos, consulta o Google via SerpAPI.
@@ -106,8 +106,12 @@ export async function POST(req: NextRequest) {
     totalAnuncios: resultados.reduce((s, r) => s + r.anuncios.length, 0),
   };
 
+  const pedido =
+    entrada.modo === "roupas"
+      ? `peca="${entrada.tipoPeca === "outra" ? entrada.tipoOutro : entrada.tipoPeca}" publico="${entrada.publico ?? ""}"`
+      : `ocasiao="${entrada.ocasiao}"`;
   console.info(
-    `[buscar] ocasiao="${entrada.ocasiao}" buscas=${resultados.length} origem=${origem} ` +
+    `[buscar] modo=${entrada.modo} ${pedido} buscas=${resultados.length} origem=${origem} ` +
       `scraper=[${resultados.map((r) => r.status).join(",")}] produtos=${resposta.totalProdutos} ` +
       `anuncios=${resposta.totalAnuncios} tempo=${((Date.now() - inicio) / 1000).toFixed(1)}s`,
   );
