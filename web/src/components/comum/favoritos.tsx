@@ -173,24 +173,37 @@ export function BotaoFavoritos() {
     else if (marcadas.length >= MAX_PECAS) mostrarAviso(`Dá para mandar até ${MAX_PECAS} peças`);
     else setMarcadas([...marcadas, url]);
   };
-  async function compartilhar(como: "whatsapp" | "copiar") {
-    // mantém a ordem da lista de favoritos
-    const pecas = lista
-      .filter((f) => marcadas.includes(f.url))
-      .map(pecaDoFavorito)
-      .filter((p) => p !== null);
-    if (pecas.length < MIN_PECAS) return;
-    const link = `${location.origin}/qual-eu-levo#${await codificarEscolha(pecas, nome)}`;
-    if (como === "whatsapp") {
-      window.open(linkWhatsApp(`Me ajuda a escolher? Qual eu levo? 💕\n${link}`), "_blank", "noopener,noreferrer");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(link);
-      mostrarAviso("Link copiado. É só colar na conversa");
-    } catch {
-      window.prompt("Copie o link:", link);
-    }
+  // Peças marcadas, na ordem da lista de favoritos.
+  const pecasMarcadas = lista
+    .filter((f) => marcadas.includes(f.url))
+    .map(pecaDoFavorito)
+    .filter((p) => p !== null);
+  const chaveLink = JSON.stringify([pecasMarcadas.map((p) => p.url), nome.trim()]);
+
+  // O link é montado ANTES do toque (a compressão é assíncrona). Se fosse montado
+  // depois, o Safari (iPhone/Mac) e o app instalado bloqueiam a abertura do
+  // WhatsApp e a cópia, por não considerarem mais que foi um toque da pessoa.
+  const [linkGerado, setLinkGerado] = useState<{ chave: string; link: string } | null>(null);
+  const linkPronto = linkGerado?.chave === chaveLink ? linkGerado.link : null;
+  useEffect(() => {
+    if (!escolhendo || pecasMarcadas.length < MIN_PECAS) return;
+    let ativo = true;
+    codificarEscolha(pecasMarcadas, nome).then((hash) => {
+      if (ativo) setLinkGerado({ chave: chaveLink, link: `${location.origin}/qual-eu-levo#${hash}` });
+    });
+    return () => {
+      ativo = false;
+    };
+    // a chave resume as peças e o nome: só recalcula quando eles mudam
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [escolhendo, chaveLink]);
+
+  function copiarLink(link: string) {
+    // writeText chamado direto no toque (sem await antes), para o Safari permitir
+    navigator.clipboard
+      .writeText(link)
+      .then(() => mostrarAviso("Link copiado. É só colar na conversa"))
+      .catch(() => window.prompt("Copie o link:", link));
   }
 
   // dá um "pulinho" no contador quando entra um favorito novo
@@ -377,18 +390,29 @@ export function BotaoFavoritos() {
                     className={classeCampo}
                   />
                   <div className="flex gap-2">
+                    {podeEnviar && linkPronto ? (
+                      // link comum (não window.open): abre o WhatsApp na hora, sem bloqueio de pop-up
+                      <a
+                        href={linkWhatsApp(`Me ajuda a escolher? Qual eu levo? 💕\n${linkPronto}`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primaria px-4 text-sm font-semibold text-white shadow-elevada transition hover:bg-primaria-forte active:scale-[0.98]"
+                      >
+                        Mandar no WhatsApp
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primaria px-4 text-sm font-semibold text-white opacity-50"
+                      >
+                        Mandar no WhatsApp
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => compartilhar("whatsapp")}
-                      disabled={!podeEnviar}
-                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primaria px-4 text-sm font-semibold text-white shadow-elevada transition hover:bg-primaria-forte active:scale-[0.98] disabled:opacity-50 disabled:shadow-none"
-                    >
-                      Mandar no WhatsApp
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => compartilhar("copiar")}
-                      disabled={!podeEnviar}
+                      onClick={() => linkPronto && copiarLink(linkPronto)}
+                      disabled={!podeEnviar || !linkPronto}
                       className="h-11 rounded-full border border-borda bg-superficie px-4 text-sm font-medium transition hover:border-destaque/50 active:scale-[0.98] disabled:opacity-50"
                     >
                       Copiar link
