@@ -15,7 +15,7 @@ Os dois modos têm o mesmo layout, a mesma tipografia e os mesmos componentes: �
 
 **Recursos para a usuária** (todos sem IA e sem gastar créditos da SerpAPI):
 
-- **Qual eu levo?**: na gaveta de favoritos, ela marca de 2 a 4 peças e manda um link no WhatsApp (ou copia). A amiga abre `/qual-eu-levo`, vê as peças lado a lado, toca na que levaria e responde pelo WhatsApp com a mensagem pronta. As peças vão **dentro do próprio link** (depois do `#`, comprimidas), então não há banco de dados. Por segurança, a página só aceita links https de lojas do catálogo; um link adulterado com outro site é recusado. A prévia do link no WhatsApp tem imagem própria.
+- **Qual eu levo?**: na gaveta de favoritos, ela marca de 2 a 4 peças e manda um link no WhatsApp (ou copia). A amiga abre `/qual-eu-levo`, vê as peças lado a lado, toca na que levaria e responde pelo WhatsApp com a mensagem pronta. Com o banco Upstash Redis conectado, o link é **curto** (`/qual-eu-levo#c=Ab3xYz9K`, cerca de 50 caracteres): as peças ficam guardadas por 90 dias em `/api/escolhas`, com um código tirado do próprio conteúdo (a mesma escolha gera o mesmo código). Sem o banco, o app volta sozinho para o link **longo**, com as peças comprimidas dentro do próprio link (depois do `#`, cerca de 800 caracteres). Por segurança, nos dois casos só são aceitas peças https de lojas do catálogo; um link adulterado com outro site é recusado. A prévia do link no WhatsApp tem imagem própria.
 - **Cores que combinam com você**: na etapa de cores, um quiz de 5 perguntas (veias, joias, sol, branco perto do rosto e contraste) indica uma cartela simplificada (Primavera, Outono, Verão, Inverno ou Neutra), em [web/src/lib/coloracao.ts](web/src/lib/coloracao.ts). "Usar minhas cores" escolhe 4 cores da cartela, e as cores dela ganham um pontinho na paleta. Fica guardada no navegador e vale para os dois modos.
 - **Guia de traje** (Vestidos): na etapa da ocasião, "Recebeu um convite com traje?" explica esporte, praia, esporte fino, passeio, passeio completo e black tie, com dicas de convidada de casamento ([web/src/lib/trajes.ts](web/src/lib/trajes.ts)). "Usar na busca" junta o traje à ocasião ("casamento à noite, traje black tie"), e o gerador por regras tem buscas próprias para cada traje.
 - **Filtro por loja** nos resultados: com mais de uma loja, chips "Todas · Shein 3 · Renner 3…" mostram só as peças de uma loja.
@@ -246,6 +246,7 @@ O `Dockerfile` usa a imagem oficial `mcr.microsoft.com/playwright:v1.65.1-noble`
 | `SERPAPI_KEY` | não | Chave da [SerpAPI](https://serpapi.com) para trazer anúncios do Google. |
 | `SERPAPI_MAX_TERMOS` | não | Quantas buscas de cada pesquisa consultam a SerpAPI. Padrão: `3`. |
 | `LIMITE_BUSCAS_POR_MINUTO` | não | Pesquisas por minuto aceitas por IP. Padrão: `6`. |
+| `KV_REST_API_URL` + `KV_REST_API_TOKEN` | não | Banco Upstash Redis para os links curtos do "Qual eu levo?". A integração da Vercel (Storage → Upstash for Redis, plano gratuito) cria essas variáveis sozinha. Também valem `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`. Sem elas, o link é o longo. |
 
 ### /scraper
 
