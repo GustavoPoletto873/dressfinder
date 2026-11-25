@@ -10,7 +10,7 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { IconeCoracao, IconeExterno, IconeFechar, IconeLixeira } from "./icones";
-import { CORES, Em, Florzinha, Folha, Margarida, Rosa } from "./flores";
+import { useKitDecoracao } from "./kitDecoracao";
 
 export interface Favorito {
   url: string;
@@ -141,6 +141,7 @@ export function BotaoCoracao({ item, className = "" }: { item: Favorito; classNa
 
 export function BotaoFavoritos() {
   const { lista, remover } = useFavoritos();
+  const { ArranjoVazio } = useKitDecoracao();
   const gaveta = useRef<HTMLDialogElement>(null);
   const [animarContador, setAnimarContador] = useState(false);
   const total = lista.length;
@@ -197,7 +198,8 @@ export function BotaoFavoritos() {
             <div>
               <h2 className="font-cursiva text-4xl leading-none text-primaria">Favoritos</h2>
               <p className="mt-1 text-sm text-texto-suave">
-                {total === 0 ? "Nenhum vestido salvo ainda" : `${total} ${total === 1 ? "vestido salvo" : "vestidos salvos"}`}
+                {/* lista única para os dois modos: por isso "peça" em vez de "vestido" */}
+                {total === 0 ? "Nenhuma peça salva ainda" : `${total} ${total === 1 ? "peça salva" : "peças salvas"}`}
               </p>
             </div>
             <button
@@ -213,14 +215,10 @@ export function BotaoFavoritos() {
           {total === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 px-10 text-center">
               <svg viewBox="-50 -40 100 70" className="w-40" aria-hidden>
-                <Em x={-22} y={4} r={-160} s={0.8}><Folha /></Em>
-                <Em x={20} y={6} r={-20} s={0.8}><Folha /></Em>
-                <Em x={0} y={0} s={1.1}><Rosa /></Em>
-                <Em x={-26} y={-14} s={0.6}><Florzinha cor={CORES.lavanda} /></Em>
-                <Em x={28} y={-12} s={0.55}><Margarida /></Em>
+                <ArranjoVazio />
               </svg>
               <p className="text-texto-suave">
-                Toque no <IconeCoracao className="inline size-4 align-[-2px] text-primaria" /> de um vestido para guardar aqui e comparar depois.
+                Toque no <IconeCoracao className="inline size-4 align-[-2px] text-primaria" /> de uma peça para guardar aqui e comparar depois.
               </p>
             </div>
           ) : (

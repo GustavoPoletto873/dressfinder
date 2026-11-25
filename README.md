@@ -1,6 +1,13 @@
-# Achei o Vestido: buscador de vestidos na Shein Brasil
+# Achei o Vestido: buscador de vestidos e roupas na Shein Brasil
 
-A pessoa descreve o vestido que procura e a ocasião, e o app devolve opções da Shein Brasil (br.shein.com) agrupadas por estilo, cada grupo com uma explicação de por que combina com a ocasião.
+A pessoa descreve o que procura e o app devolve opções da Shein Brasil (br.shein.com) agrupadas por estilo, cada grupo com uma explicação de por que combina com o pedido.
+
+O app tem **dois modos**, alternados por um switch no topo da página:
+
+- **Vestidos** (padrão): ocasião, comprimento, cores, estilo, tecido, decote e manga. Tema branco creme e rosa antigo, com rosas, margaridas, lavandas e tulipas.
+- **Roupas** (`?modo=roupas`): tipo de peça (blusa, calça, jaqueta... ou outra), público, uso, modelagem, cores, estilo, tecido, tamanho e numeração (34 a 56, só para calça, jeans, saia, short e bermuda). Tema azul soft, com hortênsias, miosótis, centáureas e delfínios.
+
+Os dois modos têm o mesmo layout, a mesma tipografia e os mesmos componentes: é o mesmo app "em outra estação".
 
 O app foi pensado para **nunca deixar a pessoa sem resposta**. Cada busca passa por uma cadeia de alternativas:
 
@@ -28,6 +35,33 @@ Se até a API do próprio app cair, o navegador monta os links de busca sozinho,
 /web       → Next.js (App Router, TypeScript, Tailwind). Interface e API /api/buscar. Deploy na Vercel.
 /scraper   → Node.js + TypeScript + Playwright + Fastify. Deploy no Railway ou Render via Dockerfile.
 ```
+
+Dentro de `web/src`:
+
+```
+components/
+  Buscador.tsx      → coordena os dois modos (um formulário de cada, resultados, troca de modo)
+  comum/            → tudo que é compartilhado: campos, chips, faixa de preço, cores, guia de tecidos,
+                      resultados, carregamento, favoritos, switch de modo, peças botânicas
+  vestidos/         → formulário, flores, ramos e kit de decoração do modo Vestidos
+  roupas/           → formulário, flores, ramos e kit de decoração do modo Roupas
+lib/
+  tipos.ts          → validação (zod): união discriminada pelo campo "modo"
+  termosIA.ts       → buscas com o Claude (um prompt por modo)
+  termosRegras.ts   → buscas por regras (escolhe o gerador do modo)
+  vestidos/, roupas/→ gerador por regras e opções de cada modo
+```
+
+### Temas
+
+As cores ficam em variáveis CSS **por papel** em [web/src/app/globals.css](web/src/app/globals.css): `--cor-fundo`, `--cor-superficie`, `--cor-primaria`, `--cor-primaria-forte`, `--cor-destaque`, `--cor-texto`, `--cor-texto-suave`, `--cor-borda` e variações. O tema é escolhido pelo atributo `data-tema="vestidos" | "roupas"` no `<html>`, e os componentes usam só as classes do tema (`bg-primaria`, `text-texto`, `border-destaque`...), nunca cores fixas.
+
+- Um script mínimo no `<head>` lê `?modo=` e define o tema **antes da primeira pintura**. Por isso um link com `?modo=roupas` já abre azul, sem "piscar".
+- A troca tem transição de cores de cerca de 400 ms e fade nas flores. Ambos ficam desligados quando o sistema pede menos movimento (`prefers-reduced-motion`).
+- O tema Roupas foi ajustado para contraste AA: os botões usam `#4D78B0` (4,5:1 com texto branco), os textos de destaque usam `#3D6598`, e o azul `#7DA4D6` aparece só em contornos e marcações.
+- O app não tem modo escuro, então não há versão escura dos temas.
+
+Trocar de modo limpa os resultados e cancela a busca em andamento. O que a pessoa digitou em cada formulário fica guardado enquanto a página estiver aberta. Os favoritos são uma lista única para os dois modos.
 
 ## Importante: a Shein bloqueia o scraper
 
@@ -83,7 +117,9 @@ O app funciona **sem nenhuma variável configurada**, usando o gerador de buscas
 
 #### Gerador de buscas por regras (sem IA)
 
-Quando não há `ANTHROPIC_API_KEY` (ou a API falha), as buscas são montadas por regras em [web/src/lib/termosRegras.ts](web/src/lib/termosRegras.ts):
+Quando não há `ANTHROPIC_API_KEY` (ou a API falha), as buscas são montadas por regras. Cada modo tem o seu gerador.
+
+**Modo Vestidos** ([web/src/lib/vestidos/termosRegras.ts](web/src/lib/vestidos/termosRegras.ts)):
 
 - **Ocasião**: reconhece casamento de dia e à noite, madrinha, noivado, formatura, trabalho e reunião, praia, jantar, batizado e igreja, festa e aniversário, chá de bebê e chá revelação, réveillon, festa junina, carnaval, festival e show, viagem e dia a dia. Cada uma tem combinações típicas (ex.: réveillon → "branco renda").
 - **Estilo**: traduz para palavras usadas nos títulos da Shein (ex.: romântico → "floral babado", minimalista → "liso básico", sexy → "fenda decote").
@@ -91,7 +127,14 @@ Quando não há `ANTHROPIC_API_KEY` (ou a API falha), as buscas são montadas po
 - **Comprimento**: o comprimento escolhido sempre prevalece sobre as sugestões da ocasião.
 - **Várias cores** (até 4 na paleta, mais o que for digitado): cada cor é tratada como alternativa e ganha a própria busca ("Em verde esmeralda"), em vez de procurar um vestido com todas as cores juntas.
 
-O guia de tecidos do formulário (textura, caimento, temperatura, elasticidade e para que ocasiões serve) fica em [web/src/components/tecidos.tsx](web/src/components/tecidos.tsx), e a paleta de cores em [web/src/components/paletaCores.ts](web/src/components/paletaCores.ts).
+**Modo Roupas** ([web/src/lib/roupas/termosRegras.ts](web/src/lib/roupas/termosRegras.ts)):
+
+- **Peça e público sempre presentes**, com concordância de gênero ("calça feminina", "short feminino", "calça preta"). O termo tem no máximo 6 palavras. Se faltar espaço, saem os detalhes do meio, nunca a peça nem o público.
+- **Uso**: dia a dia → "básico", trabalho → "social", academia → "fitness", frio → "térmico", praia → "leve", balada → "brilho", encontro → "elegante".
+- **Ideias por peça**: cada tipo tem três sugestões próprias (ex.: calça → wide leg, alfaiataria e cargo; jaqueta → jeans, couro sintético e bomber).
+- **Modelagens** (até 2) e **cores** (até 4) viram alternativas, cada uma com a própria busca.
+
+O guia de tecidos (textura, caimento, temperatura, elasticidade e para que ocasiões serve) fica em [web/src/components/comum/tecidos.tsx](web/src/components/comum/tecidos.tsx), com uma lista por modo (o modo Roupas inclui moletom, sarja, alfaiataria e couro sintético). As opções do modo Roupas (peças, públicos, modelagens por peça, numeração) ficam em [web/src/lib/roupas/opcoes.ts](web/src/lib/roupas/opcoes.ts), e a paleta de cores em [web/src/components/comum/paletaCores.ts](web/src/components/comum/paletaCores.ts).
 
 Para incluir novas ocasiões, estilos ou detalhes, basta acrescentar linhas nas listas `PERFIS`, `ESTILOS` e `DETALHES` desse arquivo.
 
@@ -164,10 +207,13 @@ O `Dockerfile` usa a imagem oficial `mcr.microsoft.com/playwright:v1.65.1-noble`
 
 ### `POST /api/buscar` (web)
 
-Entrada (só `ocasiao` é obrigatória):
+A entrada tem o campo `modo` (`"vestidos"` ou `"roupas"`) e é validada com uma união discriminada do zod. Pedidos sem `modo` são tratados como Vestidos.
+
+Modo Vestidos (só `ocasiao` é obrigatória):
 
 ```json
 {
+  "modo": "vestidos",
   "ocasiao": "casamento de dia",
   "comprimento": "midi",
   "cor": "verde-oliva",
@@ -181,7 +227,30 @@ Entrada (só `ocasiao` é obrigatória):
 }
 ```
 
-Saída: para cada busca, `termo`, `titulo`, `motivo`, `linkShein`, `linkGoogle`, `status` do scraper (`ok`, `vazio`, `bloqueado`, `erro` ou `desativado`), `produtos`, `statusAnuncios` (`ok`, `vazio`, `cota`, `erro`, `desativado` ou `pulado`) e `anuncios`. Itens com preço fora da faixa informada são removidos. Itens sem preço são mantidos.
+Modo Roupas (só `tipoPeca` é obrigatório; com `"outra"`, `tipoOutro` também):
+
+```json
+{
+  "modo": "roupas",
+  "tipoPeca": "calça",
+  "tipoOutro": "",
+  "publico": "feminino",
+  "ocasiao": "trabalho",
+  "estilo": "social",
+  "cor": "bege, preto",
+  "tecido": "linho",
+  "modelagem": "wide leg",
+  "tamanho": "M",
+  "numeracao": "40",
+  "precoMin": "",
+  "precoMax": 150,
+  "observacoes": ""
+}
+```
+
+No modo Roupas, toda busca gerada inclui o tipo de peça e, se informado, o público concordando com a peça (ex.: "calça wide leg linho bege feminina", "short jeans feminino", "moletom com capuz masculino"). Isso vale tanto para o gerador por regras quanto para o Claude.
+
+Saída (igual nos dois modos): para cada busca, `termo`, `titulo`, `motivo`, `linkShein`, `linkGoogle`, `status` do scraper (`ok`, `vazio`, `bloqueado`, `erro` ou `desativado`), `produtos`, `statusAnuncios` (`ok`, `vazio`, `cota`, `erro`, `desativado` ou `pulado`) e `anuncios`. Itens com preço fora da faixa informada são removidos. Itens sem preço são mantidos.
 
 ### `POST /buscar` (scraper)
 

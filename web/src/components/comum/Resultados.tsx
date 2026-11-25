@@ -3,19 +3,20 @@
 import { useState } from "react";
 import type { Anuncio, Produto, RespostaBusca, ResultadoBusca } from "@/lib/tipos";
 import { BotaoCoracao } from "./favoritos";
-import { CORES, Em, Florzinha, Folha, Margarida } from "./flores";
 import { IconeExterno, IconeFlor, IconeLapis, IconeLupa, IconeSacola, IconeSeta } from "./icones";
+import { useKitDecoracao } from "./kitDecoracao";
+import { useModo } from "./modo";
 
 const linkExterno = { target: "_blank", rel: "noopener noreferrer" } as const;
 
 /** Imagem do produto com placeholder florido quando não há foto. */
 function Foto({ src, alt, className = "" }: { src: string | null; alt: string; className?: string }) {
+  const { FlorSemFoto } = useKitDecoracao();
   if (!src) {
     return (
       <div className={"grid place-items-center bg-primaria-suave " + className}>
         <svg viewBox="-30 -30 60 60" className="w-1/2 opacity-80" aria-hidden>
-          <Em x={-14} y={10} r={-150} s={0.6}><Folha /></Em>
-          <Em x={0} y={0}><Margarida /></Em>
+          <FlorSemFoto />
         </svg>
       </div>
     );
@@ -101,6 +102,7 @@ function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) 
 
 /** Botões de busca pronta. Em destaque quando são o único conteúdo do grupo. */
 function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boolean }) {
+  const modo = useModo();
   if (destaque) {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
@@ -114,7 +116,9 @@ function BotoesBusca({ busca, destaque }: { busca: ResultadoBusca; destaque: boo
           </span>
           <span className="flex-1">
             <span className="block font-medium">Ver esta busca na Shein</span>
-            <span className="block text-sm text-white/80">Abre a lista de vestidos</span>
+            <span className="block text-sm text-white/80">
+              {modo === "roupas" ? "Abre a lista de peças" : "Abre a lista de vestidos"}
+            </span>
           </span>
           <IconeExterno className="size-4 opacity-70 transition group-hover:opacity-100" />
         </a>
@@ -229,6 +233,7 @@ interface Props {
 
 export function Resultados({ resposta, resumo, aoEditar }: Props) {
   const { totalProdutos, totalAnuncios, buscas } = resposta;
+  const { FlorAviso } = useKitDecoracao();
   const aviso =
     totalProdutos > 0
       ? null
@@ -262,7 +267,7 @@ export function Resultados({ resposta, resumo, aoEditar }: Props) {
       {aviso && (
         <p className="surgir mx-auto flex max-w-2xl items-start gap-2 rounded-2xl bg-fundo-escuro/70 px-4 py-3 text-sm text-texto-suave" role="status">
           <svg viewBox="-12 -12 24 24" className="mt-0.5 size-4 shrink-0" aria-hidden>
-            <Florzinha cor={CORES.lavanda} />
+            <FlorAviso />
           </svg>
           {aviso}
         </p>

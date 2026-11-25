@@ -145,7 +145,54 @@ export const TECIDOS: Tecido[] = [
     atencao: "Pode pinicar por dentro se não tiver forro, e é mais pesado.",
     brilho: 5, caimento: 3, temperatura: 3, elasticidade: 1,
   },
+  // --- tecidos mais comuns em roupas do dia a dia ---
+  {
+    nome: "moletom",
+    resumo: "macio, quentinho e confortável",
+    toque: "Liso por fora e felpudo por dentro (flanelado). Abraça sem apertar.",
+    idealPara: "dias frios, casa, viagens e looks esportivos",
+    atencao: "Esquenta bastante, e os mais grossos dão volume.",
+    brilho: 1, caimento: 2, temperatura: 5, elasticidade: 3,
+  },
+  {
+    nome: "sarja",
+    resumo: "firme, com linhas diagonais",
+    toque: "Encorpado, com diagonais bem fininhas. Parece jeans, mas é mais leve e vem em várias cores.",
+    idealPara: "calças, shorts, saias e jaquetas do dia a dia",
+    atencao: "É firme. Com elastano fica bem mais confortável.",
+    brilho: 1, caimento: 1, temperatura: 3, elasticidade: 2,
+  },
+  {
+    nome: "alfaiataria",
+    resumo: "estruturado e elegante",
+    toque: "Liso, encorpado e de toque seco. Mantém o vinco e o formato da peça.",
+    idealPara: "trabalho, reuniões, eventos e looks mais arrumados",
+    atencao: "Amassa pouco, mas costuma pedir ferro de passar para ficar perfeito.",
+    brilho: 1, caimento: 2, temperatura: 3, elasticidade: 2,
+  },
+  {
+    nome: "couro sintético",
+    resumo: "liso, com brilho e atitude",
+    toque: "Imita couro: superfície lisa e um pouco brilhante. Não deixa o ar passar.",
+    idealPara: "jaquetas, saias, calças e looks à noite",
+    atencao: "Esquenta e não respira. Evite em dias muito quentes.",
+    brilho: 4, caimento: 1, temperatura: 4, elasticidade: 1,
+  },
 ];
+
+const porNome = (nomes: string[]) => nomes.map((n) => TECIDOS.find((t) => t.nome === n)!);
+
+/** Tecidos do modo Vestidos (mesma lista e ordem de sempre). */
+export const TECIDOS_VESTIDOS = porNome([
+  "cetim", "chiffon", "crepe", "linho", "algodão", "viscose", "malha", "canelado",
+  "tricô", "tule", "renda", "laise", "veludo", "jeans", "paetê",
+]);
+
+/** Tecidos do modo Roupas (os que mais aparecem em peças do dia a dia). */
+export const TECIDOS_ROUPAS = porNome([
+  "algodão", "malha", "canelado", "moletom", "tricô", "jeans", "sarja",
+  "alfaiataria", "linho", "viscose", "crepe", "cetim", "veludo", "couro sintético",
+]);
 
 export const ESCALAS: { chave: "brilho" | "caimento" | "temperatura" | "elasticidade"; rotulo: string; min: string; max: string }[] = [
   { chave: "brilho", rotulo: "Brilho", min: "fosco", max: "brilhante" },
@@ -382,6 +429,73 @@ export function AmostraTecido({ nome, className = "" }: { nome: string; classNam
           </defs>
           <rect width="60" height="60" fill="#c99b3f" />
           <rect width="60" height="60" fill={`url(#${p("p")})`} />
+        </>
+      );
+      break;
+    case "moletom":
+      conteudo = (
+        <>
+          <defs>
+            <pattern id={p("p")} width="5" height="5" patternUnits="userSpaceOnUse">
+              <circle cx="1.2" cy="1.4" r="0.9" fill="#d5d9e2" />
+              <circle cx="3.8" cy="3.6" r="0.8" fill="#eef0f5" />
+            </pattern>
+          </defs>
+          <rect width="60" height="60" fill="#c9ced9" />
+          <rect width="60" height="60" fill={`url(#${p("p")})`} />
+          <rect y="44" width="60" height="16" fill="#bcc2cf" />
+          <path d="M0 44 H60" stroke="#aeb5c4" strokeWidth="1.2" />
+          {[4, 10, 16, 22, 28, 34, 40, 46, 52, 58].map((x) => (
+            <path key={x} d={`M${x} 46 V58`} stroke="#b1b8c6" strokeWidth="1.4" />
+          ))}
+        </>
+      );
+      break;
+    case "sarja":
+      conteudo = (
+        <>
+          <defs>
+            <pattern id={p("p")} width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+              <rect width="1.6" height="3" fill="#b8a77f" />
+            </pattern>
+          </defs>
+          <rect width="60" height="60" fill="#cbbd96" />
+          <rect width="60" height="60" fill={`url(#${p("p")})`} opacity="0.75" />
+        </>
+      );
+      break;
+    case "alfaiataria":
+      conteudo = (
+        <>
+          <defs>
+            <pattern id={p("p")} width="8" height="8" patternUnits="userSpaceOnUse">
+              <path d="M0 4 L4 0 M4 8 L8 4" stroke="#7d8597" strokeWidth="0.9" />
+              <path d="M0 4 L4 8 M4 0 L8 4" stroke="#9aa1b1" strokeWidth="0.6" />
+            </pattern>
+          </defs>
+          <rect width="60" height="60" fill="#8e96a8" />
+          <rect width="60" height="60" fill={`url(#${p("p")})`} />
+          <path d="M30 0 V60" stroke="#c9cfdb" strokeWidth="0.8" strokeDasharray="2 2" />
+        </>
+      );
+      break;
+    case "couro sintético":
+      conteudo = (
+        <>
+          <defs>
+            <linearGradient id={p("g")} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#3a3236" />
+              <stop offset="0.45" stopColor="#5a5055" />
+              <stop offset="0.6" stopColor="#2d272a" />
+              <stop offset="1" stopColor="#403739" />
+            </linearGradient>
+            <pattern id={p("p")} width="6" height="6" patternUnits="userSpaceOnUse">
+              <path d="M0 3 Q 1.5 1.5 3 3 T 6 3" stroke="#000" strokeOpacity="0.18" strokeWidth="0.5" fill="none" />
+            </pattern>
+          </defs>
+          <rect width="60" height="60" fill={`url(#${p("g")})`} />
+          <rect width="60" height="60" fill={`url(#${p("p")})`} />
+          <path d="M-5 20 C 15 12, 30 26, 65 10" stroke="#fff" strokeOpacity="0.22" strokeWidth="5" fill="none" />
         </>
       );
       break;
