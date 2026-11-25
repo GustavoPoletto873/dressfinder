@@ -9,10 +9,16 @@ import { useModo } from "./modo";
 
 const linkExterno = { target: "_blank", rel: "noopener noreferrer" } as const;
 
-/** Imagem do produto com placeholder florido quando não há foto. */
-function Foto({ src, alt, className = "" }: { src: string | null; alt: string; className?: string }) {
+/**
+ * Foto do produto. Tenta a foto principal, depois a reserva (miniatura do
+ * Google) e, se nenhuma carregar, mostra um placeholder florido.
+ */
+function Foto({ src, reserva, alt, className = "" }: { src: string | null; reserva?: string | null; alt: string; className?: string }) {
   const { FlorSemFoto } = useKitDecoracao();
-  if (!src) {
+  const fontes = [src, reserva].filter((f): f is string => Boolean(f));
+  const [falhas, setFalhas] = useState(0);
+  const atual = fontes[falhas];
+  if (!atual) {
     return (
       <div className={"grid place-items-center bg-primaria-suave " + className}>
         <svg viewBox="-30 -30 60 60" className="w-1/2 opacity-80" aria-hidden>
@@ -24,17 +30,35 @@ function Foto({ src, alt, className = "" }: { src: string | null; alt: string; c
   return (
     // imagens vêm de vários domínios (Shein/Google); <img> simples evita configurar domínios no next/image
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" className={"object-cover " + className} />
+    <img
+      key={atual}
+      src={atual}
+      alt={alt}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFalhas((n) => n + 1)}
+      className={"object-cover " + className}
+    />
   );
 }
 
-function CardProduto({ produto, indice }: { produto: Produto; indice: number }) {
+/** Cartão de vitrine (foto grande, preço, coração e "Ver na Shein"). Serve para produtos e anúncios. */
+function CardProduto({
+  produto,
+  indice,
+  rotulo = "Ver na Shein",
+}: {
+  produto: Produto & { imagemReserva?: string | null };
+  indice: number;
+  rotulo?: string;
+}) {
   return (
     <article className="surgir group flex flex-col" style={{ animationDelay: `${Math.min(indice, 8) * 60}ms` }}>
       <div className="relative overflow-hidden rounded-3xl bg-fundo-escuro shadow-suave transition-shadow duration-300 group-hover:shadow-elevada">
         <a href={produto.url} {...linkExterno} tabIndex={-1} aria-hidden>
           <Foto
             src={produto.imagem}
+            reserva={produto.imagemReserva}
             alt=""
             className="aspect-[3/4] w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]"
           />
@@ -55,48 +79,20 @@ function CardProduto({ produto, indice }: { produto: Produto; indice: number }) 
         {...linkExterno}
         className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-destaque/40 px-4 py-2 text-sm font-medium text-primaria-forte transition-all duration-200 hover:border-primaria hover:bg-primaria hover:text-white active:scale-95"
       >
-        Ver na Shein <IconeExterno className="size-3.5" />
+        {rotulo} <IconeExterno className="size-3.5" />
       </a>
     </article>
   );
 }
 
+/** Anúncio encontrado no Google: mesmo cartão de vitrine, com foto. */
 function CardAnuncio({ anuncio, indice }: { anuncio: Anuncio; indice: number }) {
-  const ehProduto = anuncio.tipo === "produto";
   return (
-    <article
-      className="surgir flex gap-4 rounded-3xl border border-borda bg-superficie p-3.5 shadow-suave transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevada"
-      style={{ animationDelay: `${Math.min(indice, 8) * 60}ms` }}
-    >
-      {anuncio.imagem ? (
-        <Foto src={anuncio.imagem} alt="" className="h-28 w-21 shrink-0 rounded-2xl" />
-      ) : (
-        // sem foto: ícone pequeno, para o cartão ficar compacto
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primaria-suave text-primaria">
-          {ehProduto ? <IconeFlor className="size-5" /> : <IconeSacola className="size-5" />}
-        </span>
-      )}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-start gap-2">
-          <h4 className="line-clamp-2 flex-1 text-sm font-medium leading-snug">{anuncio.titulo}</h4>
-          {ehProduto && (
-            <BotaoCoracao
-              item={{ url: anuncio.url, titulo: anuncio.titulo, imagem: anuncio.imagem, preco: anuncio.preco }}
-              className="-mr-1 -mt-1 size-9 shrink-0 shadow-none"
-            />
-          )}
-        </div>
-        {anuncio.preco && <p className="mt-1 font-semibold">{anuncio.preco}</p>}
-        {anuncio.trecho && <p className="mt-1 line-clamp-2 text-xs text-texto-suave">{anuncio.trecho}</p>}
-        <a
-          href={anuncio.url}
-          {...linkExterno}
-          className="mt-auto inline-flex w-fit items-center gap-1.5 pt-2 text-sm font-medium text-primaria-forte underline-offset-4 transition hover:text-primaria hover:underline"
-        >
-          {ehProduto ? "Ver na Shein" : "Abrir lista na Shein"} <IconeExterno className="size-3.5" />
-        </a>
-      </div>
-    </article>
+    <CardProduto
+      produto={anuncio}
+      indice={indice}
+      rotulo={anuncio.tipo === "produto" ? "Ver na Shein" : "Abrir lista na Shein"}
+    />
   );
 }
 
@@ -205,7 +201,7 @@ function GrupoBusca({ busca, indice }: { busca: ResultadoBusca; indice: number }
       )}
       {!temProdutos && temAnuncios && (
         <>
-          <div className="mb-6 grid gap-3 md:grid-cols-2">
+          <div className="mb-6 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
             {anuncios.map((a, i) => (
               <CardAnuncio key={a.url} anuncio={a} indice={i} />
             ))}

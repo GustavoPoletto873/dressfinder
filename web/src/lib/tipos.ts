@@ -119,7 +119,10 @@ export interface Produto {
 export interface Anuncio {
   titulo: string;
   url: string;
+  /** Foto principal (servida pela Shein). */
   imagem: string | null;
+  /** Foto reserva (miniatura do Google), usada se a principal não carregar. */
+  imagemReserva?: string | null;
   preco: string | null;
   precoNumero: number | null;
   trecho: string | null;
